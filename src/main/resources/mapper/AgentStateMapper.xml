@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.agent.monitor.mapper.AgentStateMapper">
+
+    <resultMap id="BaseResultMap" type="com.agent.monitor.entity.AgentState">
+        <id column="id" property="id"/>
+        <result column="agent_id" property="agentId"/>
+        <result column="server_id" property="serverId"/>
+        <result column="framework" property="framework"/>
+        <result column="language" property="language"/>
+        <result column="status" property="status"/>
+        <result column="current_activity" property="currentActivity"/>
+        <result column="role" property="role"/>
+        <result column="last_activity" property="lastActivity"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, agent_id, server_id, framework, language, status,
+        current_activity, role, last_activity, created_at, updated_at
+    </sql>
+
+    <insert id="insert" parameterType="com.agent.monitor.entity.AgentState" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO agent_states (
+            agent_id, server_id, framework, language, status,
+            current_activity, role, last_activity
+        ) VALUES (
+            #{agentId}, #{serverId}, #{framework}, #{language}, #{status},
+            #{currentActivity}, #{role}, #{lastActivity}
+        )
+        ON DUPLICATE KEY UPDATE
+            server_id = VALUES(server_id),
+            framework = VALUES(framework),
+            language = VALUES(language),
+            status = VALUES(status),
+            current_activity = VALUES(current_activity),
+            role = VALUES(role),
+            last_activity = VALUES(last_activity),
+            updated_at = CURRENT_TIMESTAMP
+    </insert>
+
+    <update id="update" parameterType="com.agent.monitor.entity.AgentState">
+        UPDATE agent_states
+        SET
+            server_id = #{serverId},
+            framework = #{framework},
+            language = #{language},
+            status = #{status},
+            current_activity = #{currentActivity},
+            role = #{role},
+            last_activity = #{lastActivity},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE agent_id = #{agentId}
+    </update>
+
+    <select id="findByAgentId" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM agent_states
+        WHERE agent_id = #{agentId}
+    </select>
+
+    <select id="findByServerId" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM agent_states
+        WHERE server_id = #{serverId}
+    </select>
+
+    <select id="findByStatus" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM agent_states
+        WHERE status = #{status}
+        ORDER BY last_activity DESC
+    </select>
+
+    <select id="findAll" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM agent_states
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="countByStatus" resultType="int">
+        SELECT COUNT(*)
+        FROM agent_states
+        WHERE status = #{status}
+    </select>
+
+    <select id="countAll" resultType="int">
+        SELECT COUNT(*)
+        FROM agent_states
+    </select>
+
+</mapper>

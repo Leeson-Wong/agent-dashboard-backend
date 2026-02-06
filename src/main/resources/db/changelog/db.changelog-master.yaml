@@ -1,0 +1,98 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-agent-states-table
+      author: agent-monitor
+      comment: 创建 Agent 状态表
+      changes:
+        - createTable:
+            tableName: agent_states
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: agent_id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: server_id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: framework
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: language
+                  type: VARCHAR(50)
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: current_activity
+                  type: TEXT
+              - column:
+                  name: role
+                  type: VARCHAR(255)
+              - column:
+                  name: last_activity
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      rollback:
+        - dropTable:
+            tableName: agent_states
+
+  - changeSet:
+      id: create-indexes
+      author: agent-monitor
+      comment: 创建索引
+      changes:
+        - createIndex:
+            indexName: idx_agent_id
+            tableName: agent_states
+            columns:
+              - column:
+                  name: agent_id
+        - createIndex:
+            indexName: idx_status
+            tableName: agent_states
+            columns:
+              - column:
+                  name: status
+        - createIndex:
+            indexName: idx_server_id
+            tableName: agent_states
+            columns:
+              - column:
+                  name: server_id
+      rollback:
+        - dropIndex:
+            indexName: idx_agent_id
+            tableName: agent_states
+        - dropIndex:
+            indexName: idx_status
+            tableName: agent_states
+        - dropIndex:
+            indexName: idx_server_id
+            tableName: agent_states

@@ -20,6 +20,8 @@ Agent 监控服务器后端 - 基于 Spring Boot 3.x
 | [WebSocket 实时同步设计](./docs/design/02-snapshot-delta-sync.md) | 快照+增量数据同步方案设计 |
 | [Memory-First 架构设计](./docs/design/03-memory-first-architecture.md) | Memory 优先 + 思考-执行分离的核心架构 |
 | [Memory 管理系统](./docs/design/04-memory-management.md) | Memory 作为 AI 本体的完整生命周期管理 |
+| [Agent 行为定义](./docs/design/05-agent-behavior.md) | Agent 生命周期、执行能力、工具系统完整定义 |
+| [CrewAI 事件映射](./docs/design/06-crewai-event-mapping.md) | CrewAI 事件到统一 Agent 行为模型的映射 |
 
 ## 快速开始
 
@@ -160,6 +162,246 @@ GET /api/agents/server/{serverId}
 GET /api/agents/stats
 ```
 
+### Agent 操作
+
+#### 暂停 Agent
+
+```http
+POST /api/agents/{agentId}/pause
+```
+
+#### 恢复 Agent
+
+```http
+POST /api/agents/{agentId}/resume
+```
+
+#### 停止 Agent
+
+```http
+POST /api/agents/{agentId}/stop
+```
+
+#### 重启 Agent
+
+```http
+POST /api/agents/{agentId}/restart
+```
+
+#### 删除 Agent
+
+```http
+DELETE /api/agents/{agentId}
+```
+
+#### 更新 Agent 配置
+
+```http
+PATCH /api/agents/{agentId}/config
+Content-Type: application/json
+
+{
+  "role": "高级研究员",
+  "temperature": 0.7
+}
+```
+
+#### 批量操作 Agent
+
+```http
+POST /api/agents/batch
+Content-Type: application/json
+
+{
+  "operation": "pause",
+  "agentIds": ["agent-001", "agent-002"]
+}
+```
+
+支持的操作: `pause`, `resume`, `stop`, `restart`, `delete`
+
+### Memory 管理
+
+#### 获取所有 Memory
+
+```http
+GET /api/memories
+```
+
+#### 创建 Memory
+
+```http
+POST /api/memories
+Content-Type: application/json
+
+{
+  "name": "研究员 Memory",
+  "role": "高级研究员",
+  "persona": "专业、严谨",
+  "goal": "深入研究特定领域"
+}
+```
+
+#### 激活 Memory
+
+```http
+POST /api/memories/{memoryId}/activate
+```
+
+#### 停用 Memory
+
+```http
+POST /api/memories/{memoryId}/deactivate
+```
+
+### Task 管理
+
+#### 获取所有任务
+
+```http
+GET /api/tasks
+```
+
+#### 获取待分配任务
+
+```http
+GET /api/tasks/pending
+```
+
+#### 创建任务
+
+```http
+POST /api/tasks
+Content-Type: application/json
+
+{
+  "name": "数据分析",
+  "description": "分析用户行为数据",
+  "priority": 8
+}
+```
+
+#### 分配任务
+
+```http
+POST /api/tasks/{taskId}/assign
+Content-Type: application/json
+
+{
+  "agentId": "agent-001",
+  "memoryId": "mem-001"
+}
+```
+
+#### 开始任务
+
+```http
+POST /api/tasks/{taskId}/start
+```
+
+#### 更新任务进度
+
+```http
+PATCH /api/tasks/{taskId}/progress
+Content-Type: application/json
+
+{
+  "progress": 50,
+  "output": "已完成50%"
+}
+```
+
+#### 完成任务
+
+```http
+POST /api/tasks/{taskId}/complete
+Content-Type: application/json
+
+{
+  "output": "任务完成，生成了分析报告"
+}
+```
+
+#### 任务失败
+
+```http
+POST /api/tasks/{taskId}/fail
+Content-Type: application/json
+
+{
+  "error": "连接超时"
+}
+```
+
+### Agent Template 管理
+
+#### 获取所有模板
+
+```http
+GET /api/templates
+```
+
+#### 获取启用的模板
+
+```http
+GET /api/templates/enabled
+```
+
+#### 根据类型获取模板
+
+```http
+GET /api/templates/type/{type}
+```
+
+支持类型: `CrewAI`, `LangChain`, `AutoGen`
+
+#### 创建模板
+
+```http
+POST /api/templates
+Content-Type: application/json
+
+{
+  "name": "CrewAI 研究员",
+  "type": "CrewAI",
+  "category": "research",
+  "role": "高级研究员",
+  "goal": "深入研究特定领域",
+  "backstory": "经验丰富的研究员",
+  "persona": "专业、严谨",
+  "skills": ["信息检索", "数据分析"],
+  "tools": ["search_tool", "pdf_reader"],
+  "enabled": true
+}
+```
+
+### WebSocket 实时推送
+
+连接 WebSocket 后可订阅以下频道:
+
+- `/topic/agents` - Agent 状态更新推送
+- `/topic/agents/{agentId}` - 特定 Agent 的更新
+- `/topic/notifications` - 系统通知
+
+```javascript
+const ws = new SockJS('http://localhost:8080/ws')
+const client = Stomp.over(ws)
+
+client.connect({}, () => {
+  // 订阅所有 Agent 更新
+  client.subscribe('/topic/agents', (message) => {
+    const data = JSON.parse(message.body)
+    console.log('Agent updated:', data)
+  })
+
+  // 订阅系统通知
+  client.subscribe('/topic/notifications', (message) => {
+    const notification = JSON.parse(message.body)
+    console.log('Notification:', notification)
+  })
+})
+```
+
 ## 数据库管理
 
 ### Liquibase 自动建表
@@ -210,19 +452,36 @@ databaseChangeLog:
 
 ```
 src/main/java/com/agent/monitor/
-├── MonitorApplication.java    # 主应用类
-├── controller/                 # 控制器层
-│   ├── EventController.java   # 事件接收
-│   └── AgentController.java   # Agent 查询
-├── service/                    # 服务层
-│   └── EventService.java      # 事件处理
-├── entity/                     # 实体类
-│   └── AgentState.java        # Agent 状态实体
-├── mapper/                     # MyBatis Mapper
-│   └── AgentStateMapper.java  # 数据访问接口
-├── dto/                        # 数据传输对象
-│   └── MonitorEventDTO.java   # 事件 DTO
-└── exception/                  # 异常处理
+├── MonitorApplication.java       # 主应用类
+├── controller/                    # 控制器层
+│   ├── EventController.java      # 事件接收
+│   ├── AgentController.java      # Agent 查询 + 操作
+│   ├── MemoryController.java     # Memory 管理
+│   ├── TaskController.java       # 任务管理
+│   └── AgentTemplateController.java # 模板管理
+├── service/                       # 服务层
+│   ├── EventService.java        # 事件处理
+│   ├── AgentOperationService.java # Agent 操作
+│   ├── MemoryService.java       # Memory 业务逻辑
+│   ├── TaskService.java         # 任务业务逻辑
+│   └── AgentTemplateService.java # 模板业务逻辑
+├── entity/                        # 实体类
+│   ├── AgentState.java          # Agent 状态实体
+│   ├── Memory.java              # Memory 实体
+│   ├── Task.java                # 任务实体
+│   └── AgentTemplate.java       # 模板实体
+├── mapper/                        # MyBatis Mapper
+│   ├── AgentStateMapper.java    # Agent 数据访问
+│   ├── MemoryMapper.java        # Memory 数据访问
+│   ├── TaskMapper.java          # 任务数据访问
+│   └── AgentTemplateMapper.java # 模板数据访问
+├── dto/                           # 数据传输对象
+│   ├── MonitorEventDTO.java     # 事件 DTO
+│   ├── ApiResponse.java         # 统一响应格式
+│   └── AgentOperationResponse.java # 操作响应
+└── websocket/                     # WebSocket
+    ├── WebSocketConfig.java     # WebSocket 配置
+    └── WebSocketMessageSender.java # 消息发送
 
 src/main/resources/
 ├── application.yml             # 应用配置
@@ -310,5 +569,5 @@ jdbc:mysql://localhost:3306/agent_monitor?useUnicode=true&characterEncoding=utf8
 
 ---
 
-**最后更新**: 2025-02-06
+**最后更新**: 2025-02-07
 **版本**: 0.1.0

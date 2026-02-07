@@ -94,4 +94,9 @@
         FROM agent_states
     </select>
 
+    <delete id="deleteByAgentId">
+        DELETE FROM agent_states
+        WHERE agent_id = #{agentId}
+    </delete>
+
 </mapper>

@@ -51,4 +51,9 @@ public interface AgentStateMapper {
      * 统计总 Agent 数量
      */
     int countAll();
+
+    /**
+     * 根据 Agent ID 删除
+     */
+    int deleteByAgentId(@Param("agentId") String agentId);
 }

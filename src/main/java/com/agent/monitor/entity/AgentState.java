@@ -43,6 +43,21 @@ public class AgentState {
     private String currentActivity;
 
     /**
+     * 当前使用的工具
+     */
+    private String currentTool;
+
+    /**
+     * 当前任务 ID
+     */
+    private String currentTaskId;
+
+    /**
+     * 关联的 Memory ID
+     */
+    private String memoryId;
+
+    /**
      * 角色信息
      */
     private String role;

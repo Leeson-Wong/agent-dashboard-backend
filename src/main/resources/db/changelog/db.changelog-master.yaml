@@ -2,7 +2,6 @@ databaseChangeLog:
   - changeSet:
       id: create-agent-states-table
       author: agent-monitor
-      comment: 创建 Agent 状态表
       changes:
         - createTable:
             tableName: agent_states
@@ -66,7 +65,6 @@ databaseChangeLog:
   - changeSet:
       id: create-indexes
       author: agent-monitor
-      comment: 创建索引
       changes:
         - createIndex:
             indexName: idx_agent_id
@@ -96,3 +94,481 @@ databaseChangeLog:
         - dropIndex:
             indexName: idx_server_id
             tableName: agent_states
+
+  - changeSet:
+      id: add-crewai-fields
+      author: agent-monitor
+      changes:
+        - addColumn:
+            tableName: agent_states
+            columns:
+              - column:
+                  name: current_tool
+                  type: VARCHAR(100)
+              - column:
+                  name: current_task_id
+                  type: VARCHAR(36)
+              - column:
+                  name: memory_id
+                  type: VARCHAR(36)
+      rollback:
+        - dropColumn:
+            tableName: agent_states
+            columnName: current_tool
+        - dropColumn:
+            tableName: agent_states
+            columnName: current_task_id
+        - dropColumn:
+            tableName: agent_states
+            columnName: memory_id
+
+  - changeSet:
+      id: add-memory-indexes
+      author: agent-monitor
+      changes:
+        - createIndex:
+            indexName: idx_memory_id
+            tableName: agent_states
+            columns:
+              - column:
+                  name: memory_id
+        - createIndex:
+            indexName: idx_current_task
+            tableName: agent_states
+            columns:
+              - column:
+                  name: current_task_id
+      rollback:
+        - dropIndex:
+            indexName: idx_memory_id
+            tableName: agent_states
+        - dropIndex:
+            indexName: idx_current_task
+            tableName: agent_states
+
+  - changeSet:
+      id: create-memories-table
+      author: agent-monitor
+      changes:
+        - createTable:
+            tableName: memories
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: memory_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: type
+                  type: VARCHAR(50)
+                  defaultValue: 'standard'
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  defaultValue: 'inactive'
+              - column:
+                  name: role
+                  type: TEXT
+              - column:
+                  name: persona
+                  type: TEXT
+              - column:
+                  name: goal
+                  type: TEXT
+              - column:
+                  name: backstory
+                  type: TEXT
+              - column:
+                  name: experiences
+                  type: JSON
+              - column:
+                  name: knowledge
+                  type: JSON
+              - column:
+                  name: skills
+                  type: JSON
+              - column:
+                  name: relationships
+                  type: JSON
+              - column:
+                  name: model_training_date
+                  type: TIMESTAMP
+              - column:
+                  name: knowledge_cutoff
+                  type: TIMESTAMP
+              - column:
+                  name: temporal_patches
+                  type: JSON
+              - column:
+                  name: total_tokens
+                  type: BIGINT
+                  defaultValue: 0
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+              - column:
+                  name: last_activated_at
+                  type: TIMESTAMP
+      rollback:
+        - dropTable:
+            tableName: memories
+
+  - changeSet:
+      id: create-memory-indexes
+      author: agent-monitor
+      changes:
+        - createIndex:
+            indexName: idx_memory_id
+            tableName: memories
+            columns:
+              - column:
+                  name: memory_id
+        - createIndex:
+            indexName: idx_memory_status
+            tableName: memories
+            columns:
+              - column:
+                  name: status
+        - createIndex:
+            indexName: idx_memory_type
+            tableName: memories
+            columns:
+              - column:
+                  name: type
+        - createIndex:
+            indexName: idx_memory_updated
+            tableName: memories
+            columns:
+              - column:
+                  name: updated_at
+      rollback:
+        - dropIndex:
+            indexName: idx_memory_id
+            tableName: memories
+        - dropIndex:
+            indexName: idx_memory_status
+            tableName: memories
+        - dropIndex:
+            indexName: idx_memory_type
+            tableName: memories
+        - dropIndex:
+            indexName: idx_memory_updated
+            tableName: memories
+
+  - changeSet:
+      id: create-tasks-table
+      author: agent-monitor
+      changes:
+        - createTable:
+            tableName: tasks
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: task_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: type
+                  type: VARCHAR(50)
+                  defaultValue: 'general'
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  defaultValue: 'pending'
+              - column:
+                  name: priority
+                  type: INT
+                  defaultValue: 5
+              - column:
+                  name: agent_id
+                  type: VARCHAR(36)
+              - column:
+                  name: memory_id
+                  type: VARCHAR(36)
+              - column:
+                  name: input
+                  type: JSON
+              - column:
+                  name: output
+                  type: JSON
+              - column:
+                  name: error
+                  type: TEXT
+              - column:
+                  name: progress
+                  type: INT
+                  defaultValue: 0
+              - column:
+                  name: started_at
+                  type: TIMESTAMP
+              - column:
+                  name: completed_at
+                  type: TIMESTAMP
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+              - column:
+                  name: created_by
+                  type: VARCHAR(100)
+              - column:
+                  name: crew_id
+                  type: VARCHAR(36)
+      rollback:
+        - dropTable:
+            tableName: tasks
+
+  - changeSet:
+      id: create-task-indexes
+      author: agent-monitor
+      changes:
+        - createIndex:
+            indexName: idx_task_id
+            tableName: tasks
+            columns:
+              - column:
+                  name: task_id
+        - createIndex:
+            indexName: idx_task_status
+            tableName: tasks
+            columns:
+              - column:
+                  name: status
+        - createIndex:
+            indexName: idx_task_agent
+            tableName: tasks
+            columns:
+              - column:
+                  name: agent_id
+        - createIndex:
+            indexName: idx_task_memory
+            tableName: tasks
+            columns:
+              - column:
+                  name: memory_id
+        - createIndex:
+            indexName: idx_task_crew
+            tableName: tasks
+            columns:
+              - column:
+                  name: crew_id
+        - createIndex:
+            indexName: idx_task_priority
+            tableName: tasks
+            columns:
+              - column:
+                  name: priority
+      rollback:
+        - dropIndex:
+            indexName: idx_task_id
+            tableName: tasks
+        - dropIndex:
+            indexName: idx_task_status
+            tableName: tasks
+        - dropIndex:
+            indexName: idx_task_agent
+            tableName: tasks
+        - dropIndex:
+            indexName: idx_task_memory
+            tableName: tasks
+        - dropIndex:
+            indexName: idx_task_crew
+            tableName: tasks
+        - dropIndex:
+            indexName: idx_task_priority
+            tableName: tasks
+
+  - changeSet:
+      id: create-agent-templates-table
+      author: agent-monitor
+      changes:
+        - createTable:
+            tableName: agent_templates
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: template_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: type
+                  type: VARCHAR(50)
+                  defaultValue: 'standard'
+              - column:
+                  name: category
+                  type: VARCHAR(50)
+                  defaultValue: 'general'
+              - column:
+                  name: role
+                  type: TEXT
+              - column:
+                  name: goal
+                  type: TEXT
+              - column:
+                  name: backstory
+                  type: TEXT
+              - column:
+                  name: persona
+                  type: TEXT
+              - column:
+                  name: skills
+                  type: JSON
+              - column:
+                  name: tools
+                  type: JSON
+              - column:
+                  name: default_model
+                  type: VARCHAR(100)
+              - column:
+                  name: default_temperature
+                  type: DECIMAL(3,2)
+                  defaultValue: 0.7
+              - column:
+                  name: default_max_tokens
+                  type: INT
+                  defaultValue: 2000
+              - column:
+                  name: system_prompt_template
+                  type: TEXT
+              - column:
+                  name: example_tasks
+                  type: JSON
+              - column:
+                  name: enabled
+                  type: BOOLEAN
+                  defaultValue: true
+              - column:
+                  name: version
+                  type: VARCHAR(20)
+                  defaultValue: '1.0.0'
+              - column:
+                  name: author
+                  type: VARCHAR(100)
+              - column:
+                  name: tags
+                  type: JSON
+              - column:
+                  name: usage_count
+                  type: BIGINT
+                  defaultValue: 0
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      rollback:
+        - dropTable:
+            tableName: agent_templates
+
+  - changeSet:
+      id: create-agent-template-indexes
+      author: agent-monitor
+      changes:
+        - createIndex:
+            indexName: idx_template_id
+            tableName: agent_templates
+            columns:
+              - column:
+                  name: template_id
+        - createIndex:
+            indexName: idx_template_type
+            tableName: agent_templates
+            columns:
+              - column:
+                  name: type
+        - createIndex:
+            indexName: idx_template_category
+            tableName: agent_templates
+            columns:
+              - column:
+                  name: category
+        - createIndex:
+            indexName: idx_template_enabled
+            tableName: agent_templates
+            columns:
+              - column:
+                  name: enabled
+      rollback:
+        - dropIndex:
+            indexName: idx_template_id
+            tableName: agent_templates
+        - dropIndex:
+            indexName: idx_template_type
+            tableName: agent_templates
+        - dropIndex:
+            indexName: idx_template_category
+            tableName: agent_templates
+        - dropIndex:
+            indexName: idx_template_enabled
+            tableName: agent_templates
+
+  - include:
+      file: db/changelog/20250207-add-agent-templates-data.yaml
+      relativeToChangelogFile: false
+
+  - include:
+      file: db/changelog/20250207-add-sample-memories-data.yaml
+      relativeToChangelogFile: false

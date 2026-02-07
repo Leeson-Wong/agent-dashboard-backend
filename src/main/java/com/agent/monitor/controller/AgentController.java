@@ -1,7 +1,10 @@
 package com.agent.monitor.controller;
 
+import com.agent.monitor.dto.AgentOperationResponse;
+import com.agent.monitor.dto.ApiResponse;
 import com.agent.monitor.entity.AgentState;
 import com.agent.monitor.mapper.AgentStateMapper;
+import com.agent.monitor.service.AgentOperationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -12,7 +15,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Agent 查询 Controller
+ * Agent Controller
+ *
+ * 提供 Agent 查询和操作接口
  */
 @Slf4j
 @RestController
@@ -21,6 +26,7 @@ import java.util.Map;
 public class AgentController {
 
     private final AgentStateMapper agentStateMapper;
+    private final AgentOperationService agentOperationService;
 
     /**
      * 获取所有 Agent
@@ -78,5 +84,85 @@ public class AgentController {
         stats.put("error", error);
 
         return ResponseEntity.ok(stats);
+    }
+
+    // ========================================================================
+    // Agent Operations
+    // ========================================================================
+
+    /**
+     * 暂停 Agent
+     */
+    @PostMapping("/{agentId}/pause")
+    public ResponseEntity<ApiResponse<AgentOperationResponse>> pauseAgent(@PathVariable String agentId) {
+        log.info("暂停 Agent: {}", agentId);
+        AgentOperationResponse response = agentOperationService.pauseAgent(agentId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    /**
+     * 恢复 Agent
+     */
+    @PostMapping("/{agentId}/resume")
+    public ResponseEntity<ApiResponse<AgentOperationResponse>> resumeAgent(@PathVariable String agentId) {
+        log.info("恢复 Agent: {}", agentId);
+        AgentOperationResponse response = agentOperationService.resumeAgent(agentId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    /**
+     * 停止 Agent
+     */
+    @PostMapping("/{agentId}/stop")
+    public ResponseEntity<ApiResponse<AgentOperationResponse>> stopAgent(@PathVariable String agentId) {
+        log.info("停止 Agent: {}", agentId);
+        AgentOperationResponse response = agentOperationService.stopAgent(agentId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    /**
+     * 重启 Agent
+     */
+    @PostMapping("/{agentId}/restart")
+    public ResponseEntity<ApiResponse<AgentOperationResponse>> restartAgent(@PathVariable String agentId) {
+        log.info("重启 Agent: {}", agentId);
+        AgentOperationResponse response = agentOperationService.restartAgent(agentId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    /**
+     * 删除 Agent
+     */
+    @DeleteMapping("/{agentId}")
+    public ResponseEntity<ApiResponse<AgentOperationResponse>> deleteAgent(@PathVariable String agentId) {
+        log.info("删除 Agent: {}", agentId);
+        AgentOperationResponse response = agentOperationService.deleteAgent(agentId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    /**
+     * 更新 Agent 配置
+     */
+    @PatchMapping("/{agentId}/config")
+    public ResponseEntity<ApiResponse<AgentOperationResponse>> updateAgentConfig(
+            @PathVariable String agentId,
+            @RequestBody Map<String, Object> config) {
+        log.info("更新 Agent 配置: {}, config: {}", agentId, config);
+        AgentOperationResponse response = agentOperationService.updateAgentConfig(agentId, config);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    /**
+     * 批量操作 Agent
+     */
+    @PostMapping("/batch")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> batchOperation(@RequestBody Map<String, Object> request) {
+        String operation = (String) request.get("operation");
+        @SuppressWarnings("unchecked")
+        List<String> agentIds = (List<String>) request.get("agentIds");
+
+        log.info("批量操作 Agent: operation={}, agentIds={}", operation, agentIds);
+        Map<String, Object> response = agentOperationService.batchOperation(operation, agentIds);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

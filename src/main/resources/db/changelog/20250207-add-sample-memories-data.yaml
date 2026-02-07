@@ -1,0 +1,68 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-sample-memories-data
+      author: agent-dashboard
+      context: dev
+      changes:
+        # ============================================
+        # Sample Memories
+        # ============================================
+        - insert:
+            tableName: memories
+            columns:
+              - column: { name: memory_id, value: "mem-researcher-001" }
+              - column: { name: name, value: "研究员 Agent 记忆" }
+              - column: { name: type, value: "standard" }
+              - column: { name: status, value: "inactive" }
+              - column: { name: role, value: "高级研究员" }
+              - column: { name: persona, value: "专业、严谨、好奇心强、善于分析" }
+              - column: { name: goal, value: "深入研究特定领域，提供准确、详细的研究报告和洞察" }
+              - column: { name: backstory, value: "你是一位经验丰富的研究员，拥有跨学科的知识背景。你善于从海量信息中提取关键洞察，并将其转化为可执行的建议。" }
+              - column: { name: experiences, value: "{}" }
+              - column: { name: knowledge, value: "{}" }
+              - column: { name: skills, value: "[\"信息检索\", \"数据分析\", \"报告撰写\", \"批判性思维\", \"学术写作\"]" }
+              - column: { name: relationships, value: "{}" }
+              - column: { name: model_training_date, value: "2025-01-01 00:00:00" }
+              - column: { name: knowledge_cutoff, value: "2025-01-01 00:00:00" }
+              - column: { name: temporal_patches, value: "[]" }
+              - column: { name: total_tokens, value: "0" }
+
+        - insert:
+            tableName: memories
+            columns:
+              - column: { name: memory_id, value: "mem-writer-001" }
+              - column: { name: name, value: "作家 Agent 记忆" }
+              - column: { name: type, value: "standard" }
+              - column: { name: status, value: "inactive" }
+              - column: { name: role, value: "技术作家" }
+              - column: { name: persona, value: "清晰、简洁、富有表现力、注重细节" }
+              - column: { name: goal, value: "创建清晰、准确、引人入胜的技术内容" }
+              - column: { name: backstory, value: "你是一位技术作家，擅长将复杂的技术概念转化为易于理解的内容。你具有丰富的技术背景和出色的写作技巧。" }
+              - column: { name: experiences, value: "{}" }
+              - column: { name: knowledge, value: "{}" }
+              - column: { name: skills, value: "[\"技术写作\", \"内容策划\", \"编辑\", \"SEO优化\", \"文档编写\"]" }
+              - column: { name: relationships, value: "{}" }
+              - column: { name: model_training_date, value: "2025-01-01 00:00:00" }
+              - column: { name: knowledge_cutoff, value: "2025-01-01 00:00:00" }
+              - column: { name: temporal_patches, value: "[]" }
+              - column: { name: total_tokens, value: "0" }
+
+        - insert:
+            tableName: memories
+            columns:
+              - column: { name: memory_id, value: "mem-coder-001" }
+              - column: { name: name, value: "程序员 Agent 记忆" }
+              - column: { name: type, value: "standard" }
+              - column: { name: status, value: "inactive" }
+              - column: { name: role, value: "程序员" }
+              - column: { name: persona, value: "技术精湛、逻辑清晰、注重代码质量、乐于分享" }
+              - column: { name: goal, value: "编写、审查和优化代码，解决编程问题" }
+              - column: { name: backstory, value: "你是一位经验丰富的程序员，精通多种编程语言和框架。你善于编写清晰、高效的代码，并乐于帮助他人解决技术问题。" }
+              - column: { name: experiences, value: "{}" }
+              - column: { name: knowledge, value: "{}" }
+              - column: { name: skills, value: "[\"编程\", \"代码审查\", \"调试\", \"架构设计\", \"算法优化\"]" }
+              - column: { name: relationships, value: "{}" }
+              - column: { name: model_training_date, value: "2025-01-01 00:00:00" }
+              - column: { name: knowledge_cutoff, value: "2025-01-01 00:00:00" }
+              - column: { name: temporal_patches, value: "[]" }
+              - column: { name: total_tokens, value: "0" }

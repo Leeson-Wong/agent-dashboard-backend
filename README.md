@@ -12,6 +12,15 @@ Agent 监控服务器后端 - 基于 Spring Boot 3.x
 - Druid（阿里连接池）
 - Maven
 
+## 📚 文档
+
+| 文档 | 说明 |
+|------|------|
+| **[系统架构总览](./docs/design/01-system-overview.md)** ⭐ | 项目定位、架构概览、技术栈（入口文档）|
+| [WebSocket 实时同步设计](./docs/design/02-snapshot-delta-sync.md) | 快照+增量数据同步方案设计 |
+| [Memory-First 架构设计](./docs/design/03-memory-first-architecture.md) | Memory 优先 + 思考-执行分离的核心架构 |
+| [Memory 管理系统](./docs/design/04-memory-management.md) | Memory 作为 AI 本体的完整生命周期管理 |
+
 ## 快速开始
 
 ### 1. 安装 MySQL

@@ -48,7 +48,7 @@ public class AgentOperationService {
         agentStateMapper.update(agent);
 
         // 广播状态更新
-        webSocketMessageSender.broadcastAgentUpdate(agent);
+        webSocketMessageSender.broadcastAgentUpdate(agent, null);  // No event sequence for manual operations
 
         log.info("Agent 已暂停: {}", agentId);
         return AgentOperationResponse.builder()
@@ -83,7 +83,7 @@ public class AgentOperationService {
         agentStateMapper.update(agent);
 
         // 广播状态更新
-        webSocketMessageSender.broadcastAgentUpdate(agent);
+        webSocketMessageSender.broadcastAgentUpdate(agent, null);  // No event sequence for manual operations
 
         log.info("Agent 已恢复: {}", agentId);
         return AgentOperationResponse.builder()
@@ -118,7 +118,7 @@ public class AgentOperationService {
         agentStateMapper.update(agent);
 
         // 广播状态更新
-        webSocketMessageSender.broadcastAgentUpdate(agent);
+        webSocketMessageSender.broadcastAgentUpdate(agent, null);  // No event sequence for manual operations
 
         log.info("Agent 已停止: {}", agentId);
         return AgentOperationResponse.builder()
@@ -153,14 +153,14 @@ public class AgentOperationService {
         agentStateMapper.update(agent);
 
         // 广播状态更新
-        webSocketMessageSender.broadcastAgentUpdate(agent);
+        webSocketMessageSender.broadcastAgentUpdate(agent, null);  // No event sequence for manual operations
 
         // 模拟重启后状态更新
         // 在实际实现中，这里应该等待 Agent 真正重启完成
         agent.setStatus("online");
         agent.setCurrentActivity("运行中");
         agentStateMapper.update(agent);
-        webSocketMessageSender.broadcastAgentUpdate(agent);
+        webSocketMessageSender.broadcastAgentUpdate(agent, null);  // No event sequence for manual operations
 
         log.info("Agent 已重启: {}", agentId);
         return AgentOperationResponse.builder()
@@ -193,7 +193,7 @@ public class AgentOperationService {
         agent.setCurrentActivity("已停止");
         agent.setUpdatedAt(Instant.now());
         agentStateMapper.update(agent);
-        webSocketMessageSender.broadcastAgentUpdate(agent);
+        webSocketMessageSender.broadcastAgentUpdate(agent, null);  // No event sequence for manual operations
 
         // 删除 Agent 记录
         agentStateMapper.deleteByAgentId(agentId);
@@ -235,7 +235,7 @@ public class AgentOperationService {
         agentStateMapper.update(agent);
 
         // 广播状态更新
-        webSocketMessageSender.broadcastAgentUpdate(agent);
+        webSocketMessageSender.broadcastAgentUpdate(agent, null);  // No event sequence for manual operations
 
         log.info("Agent 配置已更新: {}", agentId);
         return AgentOperationResponse.builder()

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.agent.monitor.mapper.MemoryMapper">
+
+    <resultMap id="BaseResultMap" type="com.agent.monitor.entity.Memory">
+        <id column="id" property="id"/>
+        <result column="memory_id" property="memoryId"/>
+        <result column="name" property="name"/>
+        <result column="type" property="type"/>
+        <result column="status" property="status"/>
+        <result column="role" property="role"/>
+        <result column="persona" property="persona"/>
+        <result column="persona_json" property="personaJson"/>
+        <result column="goal" property="goal"/>
+        <result column="goals_json" property="goalsJson"/>
+        <result column="backstory" property="backstory"/>
+        <result column="experiences" property="experiences"/>
+        <result column="knowledge" property="knowledge"/>
+        <result column="skills" property="skills"/>
+        <result column="relationships" property="relationships"/>
+        <result column="values_json" property="valuesJson"/>
+        <result column="model_training_date" property="modelTrainingDate"/>
+        <result column="knowledge_cutoff" property="knowledgeCutoff"/>
+        <result column="temporal_patches" property="temporalPatches"/>
+        <result column="total_tokens" property="totalTokens"/>
+        <result column="total_interactions" property="totalInteractions"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+        <result column="last_activated_at" property="lastActivatedAt"/>
+        <result column="version" property="version"/>
+        <result column="parent_memory_id" property="parentMemoryId"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, memory_id, name, type, status, role, persona, persona_json, goal, goals_json,
+        backstory, experiences, knowledge, skills, relationships, values_json,
+        model_training_date, knowledge_cutoff, temporal_patches, total_tokens, total_interactions,
+        created_at, updated_at, last_activated_at, version, parent_memory_id
+    </sql>
+
+    <insert id="insert" parameterType="com.agent.monitor.entity.Memory" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO memories (
+            memory_id, name, type, status, role, persona, goal, backstory,
+            model_training_date, knowledge_cutoff, temporal_patches, total_tokens,
+            created_at, updated_at, last_activated_at
+        ) VALUES (
+            #{memoryId}, #{name}, #{type}, #{status}, #{role}, #{persona}, #{goal}, #{backstory},
+            #{modelTrainingDate}, #{knowledgeCutoff}, #{temporalPatches}, #{totalTokens},
+            #{createdAt}, #{updatedAt}, #{lastActivatedAt}
+        )
+    </insert>
+
+    <update id="update" parameterType="com.agent.monitor.entity.Memory">
+        UPDATE memories
+        SET
+            name = #{name},
+            type = #{type},
+            status = #{status},
+            role = #{role},
+            persona = #{persona},
+            persona_json = #{personaJson},
+            goal = #{goal},
+            goals_json = #{goalsJson},
+            backstory = #{backstory},
+            experiences = #{experiences},
+            knowledge = #{knowledge},
+            skills = #{skills},
+            relationships = #{relationships},
+            values_json = #{valuesJson},
+            temporal_patches = #{temporalPatches},
+            total_tokens = #{totalTokens},
+            total_interactions = #{totalInteractions},
+            updated_at = #{updatedAt},
+            last_activated_at = #{lastActivatedAt},
+            version = #{version}
+        WHERE memory_id = #{memoryId}
+    </update>
+
+    <select id="findByMemoryId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM memories
+        WHERE memory_id = #{memoryId}
+    </select>
+
+    <select id="findAll" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM memories
+        ORDER BY updated_at DESC
+    </select>
+
+    <select id="findByStatus" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM memories
+        WHERE status = #{status}
+        ORDER BY updated_at DESC
+    </select>
+
+    <select id="findByType" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM memories
+        WHERE type = #{type}
+        ORDER BY updated_at DESC
+    </select>
+
+    <delete id="deleteByMemoryId">
+        DELETE FROM memories
+        WHERE memory_id = #{memoryId}
+    </delete>
+
+    <select id="count" resultType="int">
+        SELECT COUNT(*) FROM memories
+    </select>
+
+    <select id="countByType" resultType="int">
+        SELECT COUNT(*) FROM memories
+        WHERE type = #{type}
+    </select>
+
+</mapper>

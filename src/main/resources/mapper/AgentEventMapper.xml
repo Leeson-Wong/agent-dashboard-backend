@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.agent.monitor.mapper.AgentEventMapper">
+
+    <resultMap id="BaseResultMap" type="com.agent.monitor.entity.AgentEvent">
+        <id column="id" property="id"/>
+        <result column="seq" property="seq"/>
+        <result column="event_type" property="eventType"/>
+        <result column="agent_id" property="agentId"/>
+        <result column="data" property="data"/>
+        <result column="created_at" property="createdAt"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, seq, event_type, agent_id, data, created_at
+    </sql>
+
+    <insert id="insert" parameterType="com.agent.monitor.entity.AgentEvent" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO agent_events (
+            seq, event_type, agent_id, data
+        ) VALUES (
+            #{seq}, #{eventType}, #{agentId}, #{data}
+        )
+    </insert>
+
+    <select id="findById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM agent_events
+        WHERE id = #{id}
+    </select>
+
+    <select id="findBySeq" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM agent_events
+        WHERE seq = #{seq}
+    </select>
+
+    <select id="findAfterSeq" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM agent_events
+        WHERE seq &gt; #{seq}
+        ORDER BY seq ASC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <select id="findByEventType" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM agent_events
+        WHERE event_type = #{eventType}
+        ORDER BY seq DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <select id="findByAgentId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM agent_events
+        WHERE agent_id = #{agentId}
+        ORDER BY seq DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <select id="getMaxSeq" resultType="long">
+        SELECT COALESCE(MAX(seq), 0) FROM agent_events
+    </select>
+
+    <delete id="deleteExpired">
+        DELETE FROM agent_events
+        WHERE created_at &lt; DATE_SUB(NOW(), INTERVAL #{hours} HOUR)
+    </delete>
+
+</mapper>

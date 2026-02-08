@@ -25,15 +25,18 @@ public class WebSocketMessageSender {
     /**
      * 广播 Agent 状态更新到所有订阅者
      */
-    public void broadcastAgentUpdate(AgentState agentState) {
+    public void broadcastAgentUpdate(AgentState agentState, Long seq) {
         try {
             Map<String, Object> message = new HashMap<>();
             message.put("type", "agent_update");
             message.put("data", agentState);
             message.put("timestamp", Instant.now().toString());
+            if (seq != null) {
+                message.put("seq", seq);
+            }
 
             messagingTemplate.convertAndSend("/topic/agents", message);
-            log.debug("广播 Agent 状态更新: {}", agentState.getAgentId());
+            log.debug("广播 Agent 状态更新: {}, seq={}", agentState.getAgentId(), seq);
         } catch (Exception e) {
             log.error("发送 Agent 更新消息失败", e);
         }
@@ -42,17 +45,20 @@ public class WebSocketMessageSender {
     /**
      * 发送 Agent 事件到特定订阅者
      */
-    public void sendAgentEvent(String agentId, String eventType, Map<String, Object> eventData) {
+    public void sendAgentEvent(String agentId, String eventType, Map<String, Object> eventData, Long seq) {
         try {
             Map<String, Object> message = new HashMap<>();
             message.put("type", eventType);
             message.put("agentId", agentId);
             message.put("data", eventData);
             message.put("timestamp", Instant.now().toString());
+            if (seq != null) {
+                message.put("seq", seq);
+            }
 
             // 发送到队列，只有特定订阅者能收到
             messagingTemplate.convertAndSend("/topic/agents/" + agentId, message);
-            log.debug("发送 Agent 事件: {} - {}", agentId, eventType);
+            log.debug("发送 Agent 事件: {} - {}, seq={}", agentId, eventType, seq);
         } catch (Exception e) {
             log.error("发送 Agent 事件消息失败", e);
         }

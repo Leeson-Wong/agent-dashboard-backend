@@ -10,6 +10,9 @@
         <result column="language" property="language"/>
         <result column="status" property="status"/>
         <result column="current_activity" property="currentActivity"/>
+        <result column="current_tool" property="currentTool"/>
+        <result column="current_task_id" property="currentTaskId"/>
+        <result column="memory_id" property="memoryId"/>
         <result column="role" property="role"/>
         <result column="last_activity" property="lastActivity"/>
         <result column="created_at" property="createdAt"/>
@@ -18,26 +21,19 @@
 
     <sql id="Base_Column_List">
         id, agent_id, server_id, framework, language, status,
-        current_activity, role, last_activity, created_at, updated_at
+        current_activity, current_tool, current_task_id, memory_id,
+        role, last_activity, created_at, updated_at
     </sql>
 
     <insert id="insert" parameterType="com.agent.monitor.entity.AgentState" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO agent_states (
+        MERGE INTO agent_states (
             agent_id, server_id, framework, language, status,
-            current_activity, role, last_activity
-        ) VALUES (
+            current_activity, role, last_activity, updated_at
+        ) KEY (agent_id)
+        VALUES (
             #{agentId}, #{serverId}, #{framework}, #{language}, #{status},
-            #{currentActivity}, #{role}, #{lastActivity}
+            #{currentActivity}, #{role}, #{lastActivity}, CURRENT_TIMESTAMP
         )
-        ON DUPLICATE KEY UPDATE
-            server_id = VALUES(server_id),
-            framework = VALUES(framework),
-            language = VALUES(language),
-            status = VALUES(status),
-            current_activity = VALUES(current_activity),
-            role = VALUES(role),
-            last_activity = VALUES(last_activity),
-            updated_at = CURRENT_TIMESTAMP
     </insert>
 
     <update id="update" parameterType="com.agent.monitor.entity.AgentState">
@@ -48,6 +44,9 @@
             language = #{language},
             status = #{status},
             current_activity = #{currentActivity},
+            current_tool = #{currentTool},
+            current_task_id = #{currentTaskId},
+            memory_id = #{memoryId},
             role = #{role},
             last_activity = #{lastActivity},
             updated_at = CURRENT_TIMESTAMP

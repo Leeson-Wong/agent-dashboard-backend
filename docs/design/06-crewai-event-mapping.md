@@ -6,7 +6,7 @@
 |------|------|
 | **设计目标** | 将 CrewAI 框架事件映射到统一的 Agent 行为模型 |
 | **创建时间** | 2026-02-07 |
-| **状态** | 开发中 |
+| **状态** | ✅ 已完成 (2026-02-08) |
 | **依赖** | 基于 [Agent 行为定义](./05-agent-behavior.md) |
 
 ---
@@ -437,7 +437,7 @@ public class EventService {
         agentStateMapper.update(state);
         log.info("Agent 使用工具: {} - {}", agentId, toolName);
 
-        // TODO: 记录到 tool_usage_stats 表
+        // ✅ 已实现: 自动记录到 tool_usage_stats 表
     }
 
     /**

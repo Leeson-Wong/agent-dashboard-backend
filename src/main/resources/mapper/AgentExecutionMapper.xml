@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.agent.monitor.mapper.AgentExecutionMapper">
+
+    <resultMap id="BaseResultMap" type="com.agent.monitor.entity.AgentExecution">
+        <id column="id" property="id"/>
+        <result column="execution_id" property="executionId"/>
+        <result column="agent_id" property="agentId"/>
+        <result column="memory_id" property="memoryId"/>
+        <result column="task_id" property="taskId"/>
+        <result column="task_type" property="taskType"/>
+        <result column="task_description" property="taskDescription"/>
+        <result column="tool_id" property="toolId"/>
+        <result column="tool_name" property="toolName"/>
+        <result column="tool_category" property="toolCategory"/>
+        <result column="input" property="input"/>
+        <result column="output" property="output"/>
+        <result column="success" property="success"/>
+        <result column="exit_code" property="exitCode"/>
+        <result column="execution_time_ms" property="executionTimeMs"/>
+        <result column="memory_used_mb" property="memoryUsedMb"/>
+        <result column="tokens_used" property="tokensUsed"/>
+        <result column="status" property="status"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="started_at" property="startedAt"/>
+        <result column="completed_at" property="completedAt"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, execution_id, agent_id, memory_id, task_id, task_type, task_description,
+        tool_id, tool_name, tool_category, input, output, success, exit_code,
+        execution_time_ms, memory_used_mb, tokens_used, status,
+        created_at, started_at, completed_at
+    </sql>
+
+    <insert id="insert" parameterType="com.agent.monitor.entity.AgentExecution" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO agent_executions (
+            execution_id, agent_id, memory_id, task_id, task_type, task_description,
+            tool_id, tool_name, tool_category, input, output, success, exit_code,
+            execution_time_ms, memory_used_mb, tokens_used, status,
+            created_at, started_at, completed_at
+        ) VALUES (
+            #{executionId}, #{agentId}, #{memoryId}, #{taskId}, #{taskType}, #{taskDescription},
+            #{toolId}, #{toolName}, #{toolCategory}, #{input}, #{output}, #{success}, #{exitCode},
+            #{executionTimeMs}, #{memoryUsedMb}, #{tokensUsed}, #{status},
+            #{createdAt}, #{startedAt}, #{completedAt}
+        )
+    </insert>
+
+    <update id="update" parameterType="com.agent.monitor.entity.AgentExecution">
+        UPDATE agent_executions
+        SET
+            memory_id = #{memoryId},
+            task_id = #{taskId},
+            task_type = #{taskType},
+            task_description = #{taskDescription},
+            tool_id = #{toolId},
+            tool_name = #{toolName},
+            tool_category = #{toolCategory},
+            input = #{input},
+            output = #{output},
+            success = #{success},
+            exit_code = #{exitCode},
+            execution_time_ms = #{executionTimeMs},
+            memory_used_mb = #{memoryUsedMb},
+            tokens_used = #{tokensUsed},
+            status = #{status},
+            started_at = #{startedAt},
+            completed_at = #{completedAt}
+        WHERE execution_id = #{executionId}
+    </update>
+
+    <select id="findByExecutionId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM agent_executions
+        WHERE execution_id = #{executionId}
+    </select>
+
+    <select id="findByAgentId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM agent_executions
+        WHERE agent_id = #{agentId}
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="findByMemoryId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM agent_executions
+        WHERE memory_id = #{memoryId}
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="findByToolId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM agent_executions
+        WHERE tool_id = #{toolId}
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="findByStatus" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM agent_executions
+        WHERE status = #{status}
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="findRecent" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM agent_executions
+        ORDER BY created_at DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

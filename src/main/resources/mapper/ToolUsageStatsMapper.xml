@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.agent.monitor.mapper.ToolUsageStatsMapper">
+
+    <resultMap id="BaseResultMap" type="com.agent.monitor.entity.ToolUsageStats">
+        <id column="id" property="id"/>
+        <result column="tool_id" property="toolId"/>
+        <result column="memory_id" property="memoryId"/>
+        <result column="total_uses" property="totalUses"/>
+        <result column="successful_uses" property="successfulUses"/>
+        <result column="failed_uses" property="failedUses"/>
+        <result column="proficiency_level" property="proficiencyLevel"/>
+        <result column="total_practice_time" property="totalPracticeTime"/>
+        <result column="last_used_at" property="lastUsedAt"/>
+        <result column="last_success_at" property="lastSuccessAt"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, tool_id, memory_id, total_uses, successful_uses, failed_uses,
+        proficiency_level, total_practice_time, last_used_at, last_success_at,
+        created_at, updated_at
+    </sql>
+
+    <insert id="insert" parameterType="com.agent.monitor.entity.ToolUsageStats" useGeneratedKeys="true" keyProperty="id">
+        MERGE INTO tool_usage_stats (
+            tool_id, memory_id, total_uses, successful_uses, failed_uses,
+            proficiency_level, total_practice_time, last_used_at, last_success_at,
+            created_at, updated_at
+        ) KEY (tool_id, memory_id)
+        VALUES (
+            #{toolId}, #{memoryId}, #{totalUses}, #{successfulUses}, #{failedUses},
+            #{proficiencyLevel}, #{totalPracticeTime}, #{lastUsedAt}, #{lastSuccessAt},
+            CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        )
+    </insert>
+
+    <update id="update" parameterType="com.agent.monitor.entity.ToolUsageStats">
+        UPDATE tool_usage_stats
+        SET
+            total_uses = #{totalUses},
+            successful_uses = #{successfulUses},
+            failed_uses = #{failedUses},
+            proficiency_level = #{proficiencyLevel},
+            total_practice_time = #{totalPracticeTime},
+            last_used_at = #{lastUsedAt},
+            last_success_at = #{lastSuccessAt},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE tool_id = #{toolId} AND memory_id = #{memoryId}
+    </update>
+
+    <select id="findByToolIdAndMemoryId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM tool_usage_stats
+        WHERE tool_id = #{toolId} AND memory_id = #{memoryId}
+    </select>
+
+    <select id="findByMemoryId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM tool_usage_stats
+        WHERE memory_id = #{memoryId}
+        ORDER BY proficiency_level DESC, total_uses DESC
+    </select>
+
+    <select id="findMostProficient" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM tool_usage_stats
+        WHERE memory_id = #{memoryId}
+        ORDER BY proficiency_level DESC, total_uses DESC
+        LIMIT #{limit}
+    </select>
+
+    <update id="incrementUses">
+        UPDATE tool_usage_stats
+        SET
+            total_uses = total_uses + 1,
+            successful_uses = successful_uses + CASE WHEN #{success} THEN 1 ELSE 0 END,
+            failed_uses = failed_uses + CASE WHEN #{success} THEN 0 ELSE 1 END,
+            last_used_at = CURRENT_TIMESTAMP,
+            <if test="success">
+                last_success_at = CURRENT_TIMESTAMP,
+            </if>
+            updated_at = CURRENT_TIMESTAMP
+        WHERE tool_id = #{toolId} AND memory_id = #{memoryId}
+    </update>
+
+    <update id="updateProficiency">
+        UPDATE tool_usage_stats
+        SET
+            proficiency_level = #{proficiency},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE tool_id = #{toolId} AND memory_id = #{memoryId}
+    </update>
+
+    <update id="updatePracticeTime">
+        UPDATE tool_usage_stats
+        SET
+            total_practice_time = total_practice_time + #{additionalSeconds},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE tool_id = #{toolId} AND memory_id = #{memoryId}
+    </update>
+
+</mapper>

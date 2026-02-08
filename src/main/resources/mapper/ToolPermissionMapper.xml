@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.agent.monitor.mapper.ToolPermissionMapper">
+
+    <resultMap id="BaseResultMap" type="com.agent.monitor.entity.ToolPermission">
+        <id column="id" property="id"/>
+        <result column="agent_id" property="agentId"/>
+        <result column="allowed_tools" property="allowedTools"/>
+        <result column="allowed_paths" property="allowedPaths"/>
+        <result column="allowed_domains" property="allowedDomains"/>
+        <result column="forbidden_tools" property="forbiddenTools"/>
+        <result column="forbidden_paths" property="forbiddenPaths"/>
+        <result column="permission_level" property="permissionLevel"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, agent_id, allowed_tools, allowed_paths, allowed_domains,
+        forbidden_tools, forbidden_paths, permission_level, created_at, updated_at
+    </sql>
+
+    <insert id="insert" parameterType="com.agent.monitor.entity.ToolPermission" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO tool_permissions (
+            agent_id, allowed_tools, allowed_paths, allowed_domains,
+            forbidden_tools, forbidden_paths, permission_level
+        ) VALUES (
+            #{agentId}, #{allowedTools}, #{allowedPaths}, #{allowedDomains},
+            #{forbiddenTools}, #{forbiddenPaths}, #{permissionLevel}
+        )
+    </insert>
+
+    <update id="update" parameterType="com.agent.monitor.entity.ToolPermission">
+        UPDATE tool_permissions
+        SET
+            allowed_tools = #{allowedTools},
+            allowed_paths = #{allowedPaths},
+            allowed_domains = #{allowedDomains},
+            forbidden_tools = #{forbiddenTools},
+            forbidden_paths = #{forbiddenPaths},
+            permission_level = #{permissionLevel},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE agent_id = #{agentId}
+    </update>
+
+    <select id="findByAgentId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM tool_permissions
+        WHERE agent_id = #{agentId}
+    </select>
+
+    <delete id="deleteByAgentId">
+        DELETE FROM tool_permissions
+        WHERE agent_id = #{agentId}
+    </delete>
+
+</mapper>

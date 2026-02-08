@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: agent-monitor-test
+  datasource:
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+    url: jdbc:h2:mem:testdb;INIT=RUNSCRIPT FROM 'classpath:h2-schema.sql'
+  h2:
+    console:
+      enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  liquibase:
+    enabled: false
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+logging:
+  level:
+    com.agent.monitor: DEBUG
+    org.springframework.test: INFO

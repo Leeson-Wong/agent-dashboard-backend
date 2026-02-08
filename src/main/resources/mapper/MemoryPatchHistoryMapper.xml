@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.agent.monitor.mapper.MemoryPatchHistoryMapper">
+
+    <!-- Result Map -->
+    <resultMap id="resultMap" type="com.agent.monitor.entity.MemoryPatchHistory">
+        <id column="id" property="id"/>
+        <result column="patch_id" property="patchId"/>
+        <result column="memory_id" property="memoryId"/>
+        <result column="session_id" property="sessionId"/>
+        <result column="outcome" property="outcome"/>
+        <result column="feedback" property="feedback"/>
+        <result column="applied_at" property="appliedAt"/>
+    </resultMap>
+
+    <!-- Insert -->
+    <insert id="insert" parameterType="com.agent.monitor.entity.MemoryPatchHistory" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO memory_patch_history (
+            patch_id,
+            memory_id,
+            session_id,
+            outcome,
+            feedback,
+            applied_at
+        ) VALUES (
+            #{patchId},
+            #{memoryId},
+            #{sessionId},
+            #{outcome},
+            #{feedback},
+            #{appliedAt}
+        )
+    </insert>
+
+    <!-- Find by ID -->
+    <select id="findById" resultMap="resultMap">
+        SELECT *
+        FROM memory_patch_history
+        WHERE id = #{id}
+    </select>
+
+    <!-- Find by memory_id -->
+    <select id="findByMemoryId" resultMap="resultMap">
+        SELECT *
+        FROM memory_patch_history
+        WHERE memory_id = #{memoryId}
+        ORDER BY applied_at DESC
+    </select>
+
+    <!-- Find by patch_id -->
+    <select id="findByPatchId" resultMap="resultMap">
+        SELECT *
+        FROM memory_patch_history
+        WHERE patch_id = #{patchId}
+        ORDER BY applied_at DESC
+    </select>
+
+    <!-- Find by session_id -->
+    <select id="findBySessionId" resultMap="resultMap">
+        SELECT *
+        FROM memory_patch_history
+        WHERE session_id = #{sessionId}
+        ORDER BY applied_at DESC
+    </select>
+
+    <!-- Find recent -->
+    <select id="findRecent" resultMap="resultMap">
+        SELECT *
+        FROM memory_patch_history
+        ORDER BY applied_at DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+</mapper>

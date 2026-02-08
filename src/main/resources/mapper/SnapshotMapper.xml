@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.agent.monitor.mapper.SnapshotMapper">
+
+    <resultMap id="BaseResultMap" type="com.agent.monitor.entity.Snapshot">
+        <id column="id" property="id"/>
+        <result column="snapshot_id" property="snapshotId"/>
+        <result column="seq" property="seq"/>
+        <result column="data" property="data"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="expires_at" property="expiresAt"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, snapshot_id, seq, data, created_at, expires_at
+    </sql>
+
+    <insert id="insert" parameterType="com.agent.monitor.entity.Snapshot" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO snapshots (
+            snapshot_id, seq, data, expires_at
+        ) VALUES (
+            #{snapshotId}, #{seq}, #{data}, #{expiresAt}
+        )
+    </insert>
+
+    <select id="findById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM snapshots
+        WHERE id = #{id}
+    </select>
+
+    <select id="findBySnapshotId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM snapshots
+        WHERE snapshot_id = #{snapshotId}
+    </select>
+
+    <select id="findLatest" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM snapshots
+        WHERE expires_at IS NULL OR expires_at > NOW()
+        ORDER BY seq DESC
+        LIMIT 1
+    </select>
+
+    <select id="findAfterSeq" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM snapshots
+        WHERE seq > #{seq}
+        ORDER BY seq ASC
+    </select>
+
+    <select id="findAll" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM snapshots
+        WHERE expires_at IS NULL OR expires_at > NOW()
+        ORDER BY seq DESC
+    </select>
+
+    <delete id="deleteExpired">
+        DELETE FROM snapshots
+        WHERE expires_at IS NOT NULL AND expires_at &lt; NOW()
+    </delete>
+
+    <delete id="deleteById">
+        DELETE FROM snapshots
+        WHERE id = #{id}
+    </delete>
+
+</mapper>

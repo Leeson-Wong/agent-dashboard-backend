@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.agent.monitor.mapper.SequenceGeneratorMapper">
+
+    <resultMap id="BaseResultMap" type="com.agent.monitor.entity.SequenceGenerator">
+        <id column="id" property="id"/>
+        <result column="sequence_name" property="sequenceName"/>
+        <result column="current_value" property="currentValue"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, sequence_name, current_value, updated_at
+    </sql>
+
+    <select id="findBySequenceName" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sequence_generator
+        WHERE sequence_name = #{sequenceName}
+    </select>
+
+    <!--
+      获取并增加序列号 (原子操作)
+      For H2 tests, use the built-in sequence
+      For production, use the sequence_generator table
+    -->
+    <select id="getNextValue" resultType="long">
+        SELECT NEXT VALUE FOR agent_events_seq
+    </select>
+
+    <insert id="insert" parameterType="com.agent.monitor.entity.SequenceGenerator" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sequence_generator (sequence_name, current_value, updated_at)
+        VALUES (#{sequenceName}, #{currentValue}, CURRENT_TIMESTAMP)
+    </insert>
+
+    <update id="updateValue">
+        UPDATE sequence_generator
+        SET current_value = #{value},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE sequence_name = #{sequenceName}
+    </update>
+
+</mapper>

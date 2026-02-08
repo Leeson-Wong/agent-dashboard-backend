@@ -7,6 +7,7 @@ import java.time.Instant;
 /**
  * Memory 实体 - AI 本体
  * Memory = Agent 的持久化身份和经验
+ * Design Document: 04-memory-management.md
  */
 @Data
 public class Memory {
@@ -39,14 +40,24 @@ public class Memory {
     private String role;
 
     /**
-     * 人格/Persona
+     * 人格/Persona (JSON 格式)
      */
     private String persona;
+
+    /**
+     * 人格/Persona (独立字段 - JSON 格式)
+     */
+    private String personaJson;
 
     /**
      * 目标
      */
     private String goal;
+
+    /**
+     * 目标列表 (JSON 格式)
+     */
+    private String goalsJson;
 
     /**
      * 背景故事
@@ -74,6 +85,11 @@ public class Memory {
     private String relationships;
 
     /**
+     * 价值观 (JSON 格式)
+     */
+    private String valuesJson;
+
+    /**
      * 模型训练日期
      */
     private Instant modelTrainingDate;
@@ -94,6 +110,11 @@ public class Memory {
     private Long totalTokens;
 
     /**
+     * 总交互次数
+     */
+    private Long totalInteractions;
+
+    /**
      * 创建时间
      */
     private Instant createdAt;
@@ -107,4 +128,14 @@ public class Memory {
      * 最后激活时间
      */
     private Instant lastActivatedAt;
+
+    /**
+     * 版本号
+     */
+    private Integer version;
+
+    /**
+     * 父 Memory ID (用于 fork 操作)
+     */
+    private String parentMemoryId;
 }

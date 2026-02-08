@@ -174,11 +174,11 @@ databaseChangeLog:
               - column:
                   name: type
                   type: VARCHAR(50)
-                  defaultValue: 'standard'
+                  defaultValue: standard
               - column:
                   name: status
                   type: VARCHAR(20)
-                  defaultValue: 'inactive'
+                  defaultValue: inactive
               - column:
                   name: role
                   type: TEXT
@@ -306,11 +306,11 @@ databaseChangeLog:
               - column:
                   name: type
                   type: VARCHAR(50)
-                  defaultValue: 'general'
+                  defaultValue: general
               - column:
                   name: status
                   type: VARCHAR(20)
-                  defaultValue: 'pending'
+                  defaultValue: pending
               - column:
                   name: priority
                   type: INT
@@ -451,11 +451,11 @@ databaseChangeLog:
               - column:
                   name: type
                   type: VARCHAR(50)
-                  defaultValue: 'standard'
+                  defaultValue: standard
               - column:
                   name: category
                   type: VARCHAR(50)
-                  defaultValue: 'general'
+                  defaultValue: general
               - column:
                   name: role
                   type: TEXT
@@ -498,7 +498,7 @@ databaseChangeLog:
               - column:
                   name: version
                   type: VARCHAR(20)
-                  defaultValue: '1.0.0'
+                  defaultValue: 1.0.0
               - column:
                   name: author
                   type: VARCHAR(100)
@@ -564,6 +564,1319 @@ databaseChangeLog:
         - dropIndex:
             indexName: idx_template_enabled
             tableName: agent_templates
+
+  # =====================================================
+  # Snapshot and Delta Sync System (2026-02-08)
+  # Design Document: 02-snapshot-delta-sync.md
+  # =====================================================
+  - changeSet:
+      id: create-sequence-generator-table
+      author: agent-monitor
+      changes:
+        - createTable:
+            tableName: sequence_generator
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: sequence_name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: current_value
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      rollback:
+        - dropTable:
+            tableName: sequence_generator
+
+  - changeSet:
+      id: init-sequence-generator
+      author: agent-monitor
+      changes:
+        - sql:
+            sql: INSERT IGNORE INTO sequence_generator (sequence_name, current_value) VALUES ('agent_events_seq', 0)
+      rollback:
+        - sql:
+            sql: DELETE FROM sequence_generator WHERE sequence_name = 'agent_events_seq'
+
+  - changeSet:
+      id: create-update-sequence-function
+      author: agent-monitor
+      changes:
+        - sql:
+            sql: |-
+              CREATE FUNCTION update_sequence(seq_name VARCHAR(100))
+              RETURNS BIGINT
+              DETERMINISTIC
+              BEGIN
+                DECLARE next_val BIGINT;
+
+                -- 使用 SELECT FOR UPDATE 锁定行
+                SELECT current_value + 1 INTO next_val
+                FROM sequence_generator
+                WHERE sequence_name = seq_name
+                FOR UPDATE;
+
+                -- 更新序列值
+                UPDATE sequence_generator
+                SET current_value = next_val,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE sequence_name = seq_name;
+
+                RETURN next_val;
+              END
+      rollback:
+        - sql:
+            sql: DROP FUNCTION IF EXISTS update_sequence
+
+  - changeSet:
+      id: create-snapshots-table
+      author: agent-monitor
+      changes:
+        - createTable:
+            tableName: snapshots
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: snapshot_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: seq
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: data
+                  type: JSON
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expires_at
+                  type: TIMESTAMP
+      rollback:
+        - dropTable:
+            tableName: snapshots
+
+  - changeSet:
+      id: create-snapshot-indexes
+      author: agent-monitor
+      changes:
+        - createIndex:
+            indexName: idx_snapshot_seq
+            tableName: snapshots
+            columns:
+              - column:
+                  name: seq
+        - createIndex:
+            indexName: idx_snapshot_expires
+            tableName: snapshots
+            columns:
+              - column:
+                  name: expires_at
+        - createIndex:
+            indexName: idx_snapshot_created
+            tableName: snapshots
+            columns:
+              - column:
+                  name: created_at
+      rollback:
+        - dropIndex:
+            indexName: idx_snapshot_seq
+            tableName: snapshots
+        - dropIndex:
+            indexName: idx_snapshot_expires
+            tableName: snapshots
+        - dropIndex:
+            indexName: idx_snapshot_created
+            tableName: snapshots
+
+  - changeSet:
+      id: create-agent-events-table
+      author: agent-monitor
+      changes:
+        - createTable:
+            tableName: agent_events
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: seq
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: event_type
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: agent_id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: data
+                  type: JSON
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropTable:
+            tableName: agent_events
+
+  - changeSet:
+      id: create-agent-events-indexes
+      author: agent-monitor
+      changes:
+        - createIndex:
+            indexName: idx_event_seq
+            tableName: agent_events
+            columns:
+              - column:
+                  name: seq
+        - createIndex:
+            indexName: idx_event_agent
+            tableName: agent_events
+            columns:
+              - column:
+                  name: agent_id
+              - column:
+                  name: created_at
+        - createIndex:
+            indexName: idx_event_created
+            tableName: agent_events
+            columns:
+              - column:
+                  name: created_at
+        - createIndex:
+            indexName: idx_event_type
+            tableName: agent_events
+            columns:
+              - column:
+                  name: event_type
+      rollback:
+        - dropIndex:
+            indexName: idx_event_seq
+            tableName: agent_events
+        - dropIndex:
+            indexName: idx_event_agent
+            tableName: agent_events
+        - dropIndex:
+            indexName: idx_event_created
+            tableName: agent_events
+        - dropIndex:
+            indexName: idx_event_type
+            tableName: agent_events
+
+  # =====================================================
+  # Memory Management System (2026-02-08)
+  # Design Document: 04-memory-management.md
+  # =====================================================
+
+  # -----------------------------------------------------
+  # Core Identity (Layer 1)
+  # -----------------------------------------------------
+  - changeSet:
+      id: update-memory-identity-table
+      author: agent-monitor
+      changes:
+        - addColumn:
+            tableName: memories
+            columns:
+              - column:
+                  name: persona_json
+                  type: TEXT
+              - column:
+                  name: goals_json
+                  type: TEXT
+              - column:
+                  name: values_json
+                  type: TEXT
+              - column:
+                  name: total_interactions
+                  type: BIGINT
+                  defaultValueNumeric: 0
+              - column:
+                  name: last_active_at
+                  type: TIMESTAMP
+              - column:
+                  name: version
+                  type: INT
+                  defaultValueNumeric: 1
+              - column:
+                  name: parent_memory_id
+                  type: VARCHAR(36)
+      rollback:
+        - dropColumn:
+            tableName: memories
+            columnName: persona_json
+        - dropColumn:
+            tableName: memories
+            columnName: goals_json
+        - dropColumn:
+            tableName: memories
+            columnName: values_json
+        - dropColumn:
+            tableName: memories
+            columnName: total_interactions
+        - dropColumn:
+            tableName: memories
+            columnName: last_active_at
+        - dropColumn:
+            tableName: memories
+            columnName: version
+        - dropColumn:
+            tableName: memories
+            columnName: parent_memory_id
+
+  - changeSet:
+      id: add-memory-parent-index
+      author: agent-monitor
+      changes:
+        - createIndex:
+            indexName: idx_memory_parent
+            tableName: memories
+            columns:
+              - column:
+                  name: parent_memory_id
+      rollback:
+        - dropIndex:
+            indexName: idx_memory_parent
+            tableName: memories
+
+  # -----------------------------------------------------
+  # Long-term Memory: Experiences (Layer 2)
+  # -----------------------------------------------------
+  - changeSet:
+      id: create-memory-experiences-table
+      author: agent-monitor
+      changes:
+        - createTable:
+            tableName: memory_experiences
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: memory_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: experience_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: type
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: task_type
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: task_description
+                  type: TEXT
+              - column:
+                  name: task_complexity
+                  type: INT
+                  defaultValueNumeric: 5
+              - column:
+                  name: task_domains
+                  type: JSON
+              - column:
+                  name: approach
+                  type: JSON
+              - column:
+                  name: outcome
+                  type: JSON
+              - column:
+                  name: learning
+                  type: JSON
+              - column:
+                  name: associations
+                  type: JSON
+              - column:
+                  name: timestamp
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: embedding
+                  type: JSON
+      rollback:
+        - dropTable:
+            tableName: memory_experiences
+
+  - changeSet:
+      id: create-memory-experiences-indexes
+      author: agent-monitor
+      changes:
+        - createIndex:
+            indexName: idx_exp_memory
+            tableName: memory_experiences
+            columns:
+              - column:
+                  name: memory_id
+        - createIndex:
+            indexName: idx_exp_type
+            tableName: memory_experiences
+            columns:
+              - column:
+                  name: type
+        - createIndex:
+            indexName: idx_exp_task_type
+            tableName: memory_experiences
+            columns:
+              - column:
+                  name: task_type
+        - createIndex:
+            indexName: idx_exp_timestamp
+            tableName: memory_experiences
+            columns:
+              - column:
+                  name: timestamp
+      rollback:
+        - dropIndex:
+            indexName: idx_exp_memory
+            tableName: memory_experiences
+        - dropIndex:
+            indexName: idx_exp_type
+            tableName: memory_experiences
+        - dropIndex:
+            indexName: idx_exp_task_type
+            tableName: memory_experiences
+        - dropIndex:
+            indexName: idx_exp_timestamp
+            tableName: memory_experiences
+
+  # -----------------------------------------------------
+  # Long-term Memory: Knowledge
+  # -----------------------------------------------------
+  - changeSet:
+      id: create-memory-knowledge-table
+      author: agent-monitor
+      changes:
+        - createTable:
+            tableName: memory_knowledge
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: memory_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: type
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: content
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: confidence
+                  type: DECIMAL(3,2)
+                  defaultValueNumeric: 0.50
+              - column:
+                  name: source_type
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: source_details
+                  type: JSON
+              - column:
+                  name: verified
+                  type: BOOLEAN
+                  defaultValue: false
+              - column:
+                  name: verified_at
+                  type: TIMESTAMP
+              - column:
+                  name: expires_at
+                  type: TIMESTAMP
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      rollback:
+        - dropTable:
+            tableName: memory_knowledge
+
+  - changeSet:
+      id: create-memory-knowledge-indexes
+      author: agent-monitor
+      changes:
+        - createIndex:
+            indexName: idx_know_memory
+            tableName: memory_knowledge
+            columns:
+              - column:
+                  name: memory_id
+        - createIndex:
+            indexName: idx_know_type
+            tableName: memory_knowledge
+            columns:
+              - column:
+                  name: type
+        - createIndex:
+            indexName: idx_know_confidence
+            tableName: memory_knowledge
+            columns:
+              - column:
+                  name: confidence
+        - createIndex:
+            indexName: idx_know_verified
+            tableName: memory_knowledge
+            columns:
+              - column:
+                  name: verified
+              - column:
+                  name: expires_at
+      rollback:
+        - dropIndex:
+            indexName: idx_know_memory
+            tableName: memory_knowledge
+        - dropIndex:
+            indexName: idx_know_type
+            tableName: memory_knowledge
+        - dropIndex:
+            indexName: idx_know_confidence
+            tableName: memory_knowledge
+        - dropIndex:
+            indexName: idx_know_verified
+            tableName: memory_knowledge
+
+  # -----------------------------------------------------
+  # Long-term Memory: Skills
+  # -----------------------------------------------------
+  - changeSet:
+      id: create-memory-skills-table
+      author: agent-monitor
+      changes:
+        - createTable:
+            tableName: memory_skills
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: memory_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: skill_name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: category
+                  type: VARCHAR(50)
+              - column:
+                  name: proficiency_level
+                  type: INT
+                  defaultValueNumeric: 0
+              - column:
+                  name: total_practice_time
+                  type: BIGINT
+                  defaultValueNumeric: 0
+              - column:
+                  name: last_practiced_at
+                  type: TIMESTAMP
+              - column:
+                  name: learning_history
+                  type: JSON
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      rollback:
+        - dropTable:
+            tableName: memory_skills
+
+  - changeSet:
+      id: create-memory-skills-indexes
+      author: agent-monitor
+      changes:
+        - createIndex:
+            indexName: idx_skill_memory
+            tableName: memory_skills
+            columns:
+              - column:
+                  name: memory_id
+        - createIndex:
+            indexName: idx_skill_category
+            tableName: memory_skills
+            columns:
+              - column:
+                  name: category
+        - createIndex:
+            indexName: idx_skill_proficiency
+            tableName: memory_skills
+            columns:
+              - column:
+                  name: proficiency_level
+      rollback:
+        - dropIndex:
+            indexName: idx_skill_memory
+            tableName: memory_skills
+        - dropIndex:
+            indexName: idx_skill_category
+            tableName: memory_skills
+        - dropIndex:
+            indexName: idx_skill_proficiency
+            tableName: memory_skills
+
+  # -----------------------------------------------------
+  # Temporal Patches
+  # -----------------------------------------------------
+  - changeSet:
+      id: create-memory-temporal-patches-table
+      author: agent-monitor
+      changes:
+        - createTable:
+            tableName: memory_temporal_patches
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: memory_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: patch_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: type
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: event_date
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: affected_domains
+                  type: JSON
+              - column:
+                  name: patch
+                  type: JSON
+                  constraints:
+                    nullable: false
+              - column:
+                  name: confidence
+                  type: DECIMAL(3,2)
+                  defaultValueNumeric: 0.50
+              - column:
+                  name: source_type
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: source_url
+                  type: VARCHAR(500)
+              - column:
+                  name: provided_by
+                  type: VARCHAR(255)
+              - column:
+                  name: applied
+                  type: BOOLEAN
+                  defaultValue: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+      rollback:
+        - dropTable:
+            tableName: memory_temporal_patches
+
+  - changeSet:
+      id: create-memory-temporal-patches-indexes
+      author: agent-monitor
+      changes:
+        - createIndex:
+            indexName: idx_patch_memory
+            tableName: memory_temporal_patches
+            columns:
+              - column:
+                  name: memory_id
+        - createIndex:
+            indexName: idx_patch_type
+            tableName: memory_temporal_patches
+            columns:
+              - column:
+                  name: type
+        - createIndex:
+            indexName: idx_patch_event_date
+            tableName: memory_temporal_patches
+            columns:
+              - column:
+                  name: event_date
+        - createIndex:
+            indexName: idx_patch_applied
+            tableName: memory_temporal_patches
+            columns:
+              - column:
+                  name: applied
+      rollback:
+        - dropIndex:
+            indexName: idx_patch_memory
+            tableName: memory_temporal_patches
+        - dropIndex:
+            indexName: idx_patch_type
+            tableName: memory_temporal_patches
+        - dropIndex:
+            indexName: idx_patch_event_date
+            tableName: memory_temporal_patches
+        - dropIndex:
+            indexName: idx_patch_applied
+            tableName: memory_temporal_patches
+
+  # -----------------------------------------------------
+  # Short-term Memory: Sessions
+  # -----------------------------------------------------
+  - changeSet:
+      id: create-memory-sessions-table
+      author: agent-monitor
+      changes:
+        - createTable:
+            tableName: memory_sessions
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: memory_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: session_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: messages
+                  type: JSON
+                  constraints:
+                    nullable: false
+              - column:
+                  name: summary
+                  type: TEXT
+              - column:
+                  name: started_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: completed_at
+                  type: TIMESTAMP
+              - column:
+                  name: message_count
+                  type: INT
+                  defaultValueNumeric: 0
+              - column:
+                  name: total_tokens
+                  type: BIGINT
+                  defaultValueNumeric: 0
+      rollback:
+        - dropTable:
+            tableName: memory_sessions
+
+  - changeSet:
+      id: create-memory-sessions-indexes
+      author: agent-monitor
+      changes:
+        - createIndex:
+            indexName: idx_session_memory
+            tableName: memory_sessions
+            columns:
+              - column:
+                  name: memory_id
+        - createIndex:
+            indexName: idx_session_started
+            tableName: memory_sessions
+            columns:
+              - column:
+                  name: started_at
+        - createIndex:
+            indexName: idx_session_completed
+            tableName: memory_sessions
+            columns:
+              - column:
+                  name: completed_at
+      rollback:
+        - dropIndex:
+            indexName: idx_session_memory
+            tableName: memory_sessions
+        - dropIndex:
+            indexName: idx_session_started
+            tableName: memory_sessions
+        - dropIndex:
+            indexName: idx_session_completed
+            tableName: memory_sessions
+
+  # -----------------------------------------------------
+  # Working Memory
+  # -----------------------------------------------------
+  - changeSet:
+      id: create-memory-working-table
+      author: agent-monitor
+      changes:
+        - createTable:
+            tableName: memory_working
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: memory_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+                  constraints:
+                    unique: true
+                    uniqueConstraintName: uk_memory_working
+              - column:
+                  name: current_task
+                  type: JSON
+              - column:
+                  name: context
+                  type: JSON
+              - column:
+                  name: temporary_files
+                  type: JSON
+              - column:
+                  name: temporary_state
+                  type: JSON
+              - column:
+                  name: last_updated
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      rollback:
+        - dropTable:
+            tableName: memory_working
+
+  - changeSet:
+      id: create-memory-working-indexes
+      author: agent-monitor
+      changes:
+        - createIndex:
+            indexName: idx_working_updated
+            tableName: memory_working
+            columns:
+              - column:
+                  name: last_updated
+      rollback:
+        - dropIndex:
+            indexName: idx_working_updated
+            tableName: memory_working
+
+  # -----------------------------------------------------
+  # Patch History
+  # -----------------------------------------------------
+  - changeSet:
+      id: create-memory-patch-history-table
+      author: agent-monitor
+      changes:
+        - createTable:
+            tableName: memory_patch_history
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: patch_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: memory_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: applied_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: session_id
+                  type: VARCHAR(36)
+              - column:
+                  name: outcome
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: feedback
+                  type: TEXT
+      rollback:
+        - dropTable:
+            tableName: memory_patch_history
+
+  - changeSet:
+      id: create-memory-patch-history-indexes
+      author: agent-monitor
+      changes:
+        - createIndex:
+            indexName: idx_patch_hist_memory
+            tableName: memory_patch_history
+            columns:
+              - column:
+                  name: memory_id
+        - createIndex:
+            indexName: idx_patch_hist_patch
+            tableName: memory_patch_history
+            columns:
+              - column:
+                  name: patch_id
+        - createIndex:
+            indexName: idx_patch_hist_applied
+            tableName: memory_patch_history
+            columns:
+              - column:
+                  name: applied_at
+      rollback:
+        - dropIndex:
+            indexName: idx_patch_hist_memory
+            tableName: memory_patch_history
+        - dropIndex:
+            indexName: idx_patch_hist_patch
+            tableName: memory_patch_history
+        - dropIndex:
+            indexName: idx_patch_hist_applied
+            tableName: memory_patch_history
+
+  # ============================================================
+  # Agent Behavior Enhancements
+  # Design Document: 05-agent-behavior.md, 06-crewai-event-mapping.md
+  # ============================================================
+
+  - changeSet:
+      id: add-agent-states-new-indexes
+      author: agent-monitor
+      changes:
+        - createIndex:
+            indexName: idx_agent_memory
+            tableName: agent_states
+            columns:
+              - column:
+                  name: memory_id
+        - createIndex:
+            indexName: idx_agent_current_task
+            tableName: agent_states
+            columns:
+              - column:
+                  name: current_task_id
+      rollback:
+        - dropIndex:
+            indexName: idx_agent_memory
+            tableName: agent_states
+        - dropIndex:
+            indexName: idx_agent_current_task
+            tableName: agent_states
+
+  - changeSet:
+      id: create-agent-executions-table
+      author: agent-monitor
+      changes:
+        - createTable:
+            tableName: agent_executions
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: execution_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: agent_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: memory_id
+                  type: VARCHAR(36)
+              - column:
+                  name: task_id
+                  type: VARCHAR(36)
+              - column:
+                  name: task_type
+                  type: VARCHAR(100)
+              - column:
+                  name: task_description
+                  type: TEXT
+              - column:
+                  name: tool_id
+                  type: VARCHAR(100)
+              - column:
+                  name: tool_name
+                  type: VARCHAR(255)
+              - column:
+                  name: tool_category
+                  type: VARCHAR(50)
+              - column:
+                  name: input
+                  type: JSON
+              - column:
+                  name: output
+                  type: JSON
+              - column:
+                  name: success
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+              - column:
+                  name: exit_code
+                  type: INT
+              - column:
+                  name: execution_time_ms
+                  type: INT
+              - column:
+                  name: memory_used_mb
+                  type: DECIMAL(10, 2)
+              - column:
+                  name: tokens_used
+                  type: INT
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  defaultValue: pending
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: started_at
+                  type: TIMESTAMP
+              - column:
+                  name: completed_at
+                  type: TIMESTAMP
+      rollback:
+        - dropTable:
+            tableName: agent_executions
+
+  - changeSet:
+      id: create-agent-executions-indexes
+      author: agent-monitor
+      changes:
+        - createIndex:
+            indexName: idx_exec_agent
+            tableName: agent_executions
+            columns:
+              - column:
+                  name: agent_id
+        - createIndex:
+            indexName: idx_exec_memory
+            tableName: agent_executions
+            columns:
+              - column:
+                  name: memory_id
+        - createIndex:
+            indexName: idx_exec_tool
+            tableName: agent_executions
+            columns:
+              - column:
+                  name: tool_id
+        - createIndex:
+            indexName: idx_exec_status
+            tableName: agent_executions
+            columns:
+              - column:
+                  name: status
+        - createIndex:
+            indexName: idx_exec_created
+            tableName: agent_executions
+            columns:
+              - column:
+                  name: created_at
+      rollback:
+        - dropIndex:
+            indexName: idx_exec_agent
+            tableName: agent_executions
+        - dropIndex:
+            indexName: idx_exec_memory
+            tableName: agent_executions
+        - dropIndex:
+            indexName: idx_exec_tool
+            tableName: agent_executions
+        - dropIndex:
+            indexName: idx_exec_status
+            tableName: agent_executions
+        - dropIndex:
+            indexName: idx_exec_created
+            tableName: agent_executions
+
+  - changeSet:
+      id: create-tool-usage-stats-table
+      author: agent-monitor
+      changes:
+        - createTable:
+            tableName: tool_usage_stats
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tool_id
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: memory_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: total_uses
+                  type: BIGINT
+                  defaultValue: 0
+              - column:
+                  name: successful_uses
+                  type: BIGINT
+                  defaultValue: 0
+              - column:
+                  name: failed_uses
+                  type: BIGINT
+                  defaultValue: 0
+              - column:
+                  name: proficiency_level
+                  type: DECIMAL(3, 2)
+                  defaultValue: 0.00
+              - column:
+                  name: total_practice_time
+                  type: BIGINT
+                  defaultValue: 0
+              - column:
+                  name: last_used_at
+                  type: TIMESTAMP
+              - column:
+                  name: last_success_at
+                  type: TIMESTAMP
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+            constraints:
+              - uniqueConstraint:
+                  name: uk_tool_memory
+                  columnNames: tool_id, memory_id
+      rollback:
+        - dropTable:
+            tableName: tool_usage_stats
+
+  - changeSet:
+      id: create-tool-usage-stats-indexes
+      author: agent-monitor
+      changes:
+        - createIndex:
+            indexName: idx_tool_stats_memory
+            tableName: tool_usage_stats
+            columns:
+              - column:
+                  name: memory_id
+        - createIndex:
+            indexName: idx_tool_stats_proficiency
+            tableName: tool_usage_stats
+            columns:
+              - column:
+                  name: proficiency_level
+      rollback:
+        - dropIndex:
+            indexName: idx_tool_stats_memory
+            tableName: tool_usage_stats
+        - dropIndex:
+            indexName: idx_tool_stats_proficiency
+            tableName: tool_usage_stats
+
+  - changeSet:
+      id: create-tool-permissions-table
+      author: agent-monitor
+      changes:
+        - createTable:
+            tableName: tool_permissions
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: agent_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: allowed_tools
+                  type: JSON
+              - column:
+                  name: allowed_paths
+                  type: JSON
+              - column:
+                  name: allowed_domains
+                  type: JSON
+              - column:
+                  name: forbidden_tools
+                  type: JSON
+              - column:
+                  name: forbidden_paths
+                  type: JSON
+              - column:
+                  name: permission_level
+                  type: VARCHAR(20)
+                  defaultValue: basic
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropTable:
+            tableName: tool_permissions
+
+  - changeSet:
+      id: create-tool-permissions-indexes
+      author: agent-monitor
+      changes:
+        - createIndex:
+            indexName: idx_tool_perms_agent
+            tableName: tool_permissions
+            columns:
+              - column:
+                  name: agent_id
+      rollback:
+        - dropIndex:
+            indexName: idx_tool_perms_agent
+            tableName: tool_permissions
 
 #  - include:
 #      file: db/changelog/20250207-add-agent-templates-data.yaml

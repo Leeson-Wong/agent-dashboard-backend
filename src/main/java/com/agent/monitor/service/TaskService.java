@@ -265,7 +265,8 @@ public class TaskService {
                     "name", task.getName(),
                     "status", task.getStatus(),
                     "progress", task.getProgress()
-                )
+                ),
+                null  // Task updates don't have event sequence numbers
             );
         } catch (Exception e) {
             log.error("广播任务更新失败", e);

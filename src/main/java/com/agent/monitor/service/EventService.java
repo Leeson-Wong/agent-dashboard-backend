@@ -135,22 +135,51 @@ public class EventService {
     private void handleAgentOnline(MonitorEventDTO event) {
         String agentId = event.getSource().getAgentId();
 
-        AgentState state = new AgentState();
-        state.setAgentId(agentId);
-        state.setServerId(event.getSource().getServerId());
-        state.setFramework(event.getSource().getFramework());
-        state.setLanguage(event.getSource().getLanguage());
-        state.setStatus("online");
-        state.setLastActivity(Instant.now());
+        // Check if agent already exists
+        AgentState state = agentStateMapper.findByAgentId(agentId);
+        if (state == null) {
+            // Create new agent state
+            state = new AgentState();
+            state.setAgentId(agentId);
+            state.setServerId(event.getSource().getServerId());
+            state.setFramework(event.getSource().getFramework());
+            state.setLanguage(event.getSource().getLanguage());
+            state.setStatus("online");
+            state.setCreatedAt(Instant.now());
+            state.setLastActivity(Instant.now());
 
-        // 从事件数据中提取角色信息
-        Object role = event.getEvent().getData().get("role");
-        if (role != null) {
-            state.setRole(role.toString());
+            // 从事件数据中提取角色信息
+            Object role = event.getEvent().getData().get("role");
+            if (role != null) {
+                state.setRole(role.toString());
+            }
+
+            try {
+                agentStateMapper.insert(state);
+            } catch (org.springframework.dao.DuplicateKeyException e) {
+                // Concurrent insert failed - query again and update
+                state = agentStateMapper.findByAgentId(agentId);
+                if (state != null) {
+                    state.setStatus("online");
+                    state.setLastActivity(Instant.now());
+                    updateAgentState(state);
+                }
+            }
+            log.info("Agent 上线: {} ({})", agentId, state.getRole());
+        } else {
+            // Agent already exists, just update status
+            state.setStatus("online");
+            state.setLastActivity(Instant.now());
+
+            // 从事件数据中提取角色信息
+            Object role = event.getEvent().getData().get("role");
+            if (role != null) {
+                state.setRole(role.toString());
+            }
+
+            updateAgentState(state);
+            log.info("Agent 上线（更新）: {} ({})", agentId, state.getRole());
         }
-
-        agentStateMapper.insert(state);
-        log.info("Agent 上线: {} ({})", agentId, state.getRole());
     }
 
     /**
@@ -179,21 +208,54 @@ public class EventService {
     private void handleAgentWorking(MonitorEventDTO event) {
         String agentId = event.getSource().getAgentId();
 
-        AgentState state = new AgentState();
-        state.setAgentId(agentId);
-        state.setServerId(event.getSource().getServerId());
-        state.setFramework(event.getSource().getFramework());
-        state.setStatus("online");
-        state.setLastActivity(Instant.now());
+        // Check if agent already exists
+        AgentState state = agentStateMapper.findByAgentId(agentId);
+        if (state == null) {
+            // Create new agent state
+            state = new AgentState();
+            state.setAgentId(agentId);
+            state.setServerId(event.getSource().getServerId());
+            state.setFramework(event.getSource().getFramework());
+            state.setLanguage(event.getSource().getLanguage());
+            state.setStatus("online");
+            state.setCreatedAt(Instant.now());
+            state.setLastActivity(Instant.now());
 
-        // 从事件数据中提取任务描述
-        Object task = event.getEvent().getData().get("task");
-        if (task != null) {
-            state.setCurrentActivity(task.toString());
+            // 从事件数据中提取任务描述
+            Object task = event.getEvent().getData().get("task");
+            if (task != null) {
+                state.setCurrentActivity(task.toString());
+            }
+
+            try {
+                agentStateMapper.insert(state);
+            } catch (org.springframework.dao.DuplicateKeyException e) {
+                // Concurrent insert failed - query again and update
+                state = agentStateMapper.findByAgentId(agentId);
+                if (state != null) {
+                    state.setStatus("online");
+                    state.setLastActivity(Instant.now());
+                    if (task != null) {
+                        state.setCurrentActivity(task.toString());
+                    }
+                    updateAgentState(state);
+                }
+            }
+            log.debug("Agent 工作中: {} - {}", agentId, state.getCurrentActivity());
+        } else {
+            // Agent already exists, just update status
+            state.setStatus("online");
+            state.setLastActivity(Instant.now());
+
+            // 从事件数据中提取任务描述
+            Object task = event.getEvent().getData().get("task");
+            if (task != null) {
+                state.setCurrentActivity(task.toString());
+            }
+
+            updateAgentState(state);
+            log.debug("Agent 工作中（更新）: {} - {}", agentId, state.getCurrentActivity());
         }
-
-        agentStateMapper.insert(state);
-        log.debug("Agent 工作中: {} - {}", agentId, state.getCurrentActivity());
     }
 
     /**

@@ -19,15 +19,6 @@
         WHERE sequence_name = #{sequenceName}
     </select>
 
-    <!--
-      获取并增加序列号 (原子操作)
-      For H2 tests, use the built-in sequence
-      For production, use the sequence_generator table
-    -->
-    <select id="getNextValue" resultType="long">
-        SELECT NEXT VALUE FOR agent_events_seq
-    </select>
-
     <insert id="insert" parameterType="com.agent.monitor.entity.SequenceGenerator" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO sequence_generator (sequence_name, current_value, updated_at)
         VALUES (#{sequenceName}, #{currentValue}, CURRENT_TIMESTAMP)

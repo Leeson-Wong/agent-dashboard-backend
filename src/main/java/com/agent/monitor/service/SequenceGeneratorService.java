@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Sequence Generator Service
- * Handles atomic sequence number generation for both MySQL and H2
+ * Handles atomic sequence number generation using sequence_generator table
  */
 @Slf4j
 @Service
@@ -22,20 +22,11 @@ public class SequenceGeneratorService {
      * Get the next sequence value for a given sequence name
      * This method atomically increments and returns the next value
      *
-     * For H2 tests: Uses the built-in H2 sequence (agent_events_seq)
-     * For production: Uses the sequence_generator table
-     *
      * @param sequenceName the sequence name
      * @return the next sequence value
      */
     @Transactional
     public Long getNextValue(String sequenceName) {
-        // For H2 tests, use the built-in sequence
-        if ("agent_events_seq".equals(sequenceName)) {
-            return sequenceGeneratorMapper.getNextValue(sequenceName);
-        }
-
-        // For production, use the sequence_generator table
         SequenceGenerator seq = sequenceGeneratorMapper.findBySequenceName(sequenceName);
         if (seq == null) {
             // Initialize sequence if it doesn't exist

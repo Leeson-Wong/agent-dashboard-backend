@@ -17,11 +17,6 @@ public interface SequenceGeneratorMapper {
     SequenceGenerator findBySequenceName(@Param("sequenceName") String sequenceName);
 
     /**
-     * 获取并增加序列号 (原子操作)
-     */
-    Long getNextValue(@Param("sequenceName") String sequenceName);
-
-    /**
      * 初始化序列
      */
     int insert(SequenceGenerator sequenceGenerator);

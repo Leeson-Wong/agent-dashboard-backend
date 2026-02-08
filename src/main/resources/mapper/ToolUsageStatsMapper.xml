@@ -24,12 +24,11 @@
     </sql>
 
     <insert id="insert" parameterType="com.agent.monitor.entity.ToolUsageStats" useGeneratedKeys="true" keyProperty="id">
-        MERGE INTO tool_usage_stats (
+        INSERT INTO tool_usage_stats (
             tool_id, memory_id, total_uses, successful_uses, failed_uses,
             proficiency_level, total_practice_time, last_used_at, last_success_at,
             created_at, updated_at
-        ) KEY (tool_id, memory_id)
-        VALUES (
+        ) VALUES (
             #{toolId}, #{memoryId}, #{totalUses}, #{successfulUses}, #{failedUses},
             #{proficiencyLevel}, #{totalPracticeTime}, #{lastUsedAt}, #{lastSuccessAt},
             CURRENT_TIMESTAMP, CURRENT_TIMESTAMP

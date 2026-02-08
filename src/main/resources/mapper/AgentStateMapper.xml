@@ -26,13 +26,14 @@
     </sql>
 
     <insert id="insert" parameterType="com.agent.monitor.entity.AgentState" useGeneratedKeys="true" keyProperty="id">
-        MERGE INTO agent_states (
+        INSERT INTO agent_states (
             agent_id, server_id, framework, language, status,
-            current_activity, role, last_activity, updated_at
-        ) KEY (agent_id)
-        VALUES (
+            current_activity, current_tool, current_task_id, memory_id,
+            role, last_activity, created_at, updated_at
+        ) VALUES (
             #{agentId}, #{serverId}, #{framework}, #{language}, #{status},
-            #{currentActivity}, #{role}, #{lastActivity}, CURRENT_TIMESTAMP
+            #{currentActivity}, #{currentTool}, #{currentTaskId}, #{memoryId},
+            #{role}, #{lastActivity}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
         )
     </insert>
 

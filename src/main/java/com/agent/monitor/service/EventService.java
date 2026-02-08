@@ -432,7 +432,15 @@ public class EventService {
             state.setStatus("online");
             state.setCreatedAt(Instant.now());
             state.setLastActivity(Instant.now());
-            agentStateMapper.insert(state);
+            try {
+                agentStateMapper.insert(state);
+            } catch (org.springframework.dao.DuplicateKeyException e) {
+                // Concurrent insert failed - query again
+                state = agentStateMapper.findByAgentId(agentId);
+                if (state == null) {
+                    throw new RuntimeException("Failed to create agent state after duplicate key", e);
+                }
+            }
         }
         return state;
     }

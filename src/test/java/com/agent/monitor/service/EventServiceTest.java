@@ -356,6 +356,12 @@ class EventServiceTest extends BaseTest {
      * 创建初始 AgentState
      */
     private void createAgentState() {
+        // Check if already exists
+        AgentState existing = agentStateMapper.findByAgentId(TEST_AGENT_ID);
+        if (existing != null) {
+            return;
+        }
+
         AgentState state = new AgentState();
         state.setAgentId(TEST_AGENT_ID);
         state.setServerId(TEST_SERVER_ID);

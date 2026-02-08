@@ -19,6 +19,13 @@
         WHERE sequence_name = #{sequenceName}
     </select>
 
+    <select id="findBySequenceNameForUpdate" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sequence_generator
+        WHERE sequence_name = #{sequenceName}
+        FOR UPDATE
+    </select>
+
     <insert id="insert" parameterType="com.agent.monitor.entity.SequenceGenerator" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO sequence_generator (sequence_name, current_value, updated_at)
         VALUES (#{sequenceName}, #{currentValue}, CURRENT_TIMESTAMP)

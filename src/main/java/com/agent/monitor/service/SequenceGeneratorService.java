@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Sequence Generator Service
  * Handles atomic sequence number generation using sequence_generator table
+ * Uses SELECT FOR UPDATE to prevent concurrent access
  */
 @Slf4j
 @Service
@@ -21,13 +22,15 @@ public class SequenceGeneratorService {
     /**
      * Get the next sequence value for a given sequence name
      * This method atomically increments and returns the next value
+     * Uses SELECT FOR UPDATE to prevent concurrent access
      *
      * @param sequenceName the sequence name
      * @return the next sequence value
      */
     @Transactional
     public Long getNextValue(String sequenceName) {
-        SequenceGenerator seq = sequenceGeneratorMapper.findBySequenceName(sequenceName);
+        // Use SELECT FOR UPDATE to lock the row and prevent concurrent reads
+        SequenceGenerator seq = sequenceGeneratorMapper.findBySequenceNameForUpdate(sequenceName);
         if (seq == null) {
             // Initialize sequence if it doesn't exist
             seq = new SequenceGenerator();

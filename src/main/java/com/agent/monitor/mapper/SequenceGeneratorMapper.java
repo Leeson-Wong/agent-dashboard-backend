@@ -17,6 +17,12 @@ public interface SequenceGeneratorMapper {
     SequenceGenerator findBySequenceName(@Param("sequenceName") String sequenceName);
 
     /**
+     * 根据 sequence_name 查找并锁定行（FOR UPDATE）
+     * 用于防止并发修改序列号
+     */
+    SequenceGenerator findBySequenceNameForUpdate(@Param("sequenceName") String sequenceName);
+
+    /**
      * 初始化序列
      */
     int insert(SequenceGenerator sequenceGenerator);

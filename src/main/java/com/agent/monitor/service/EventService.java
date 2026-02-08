@@ -366,6 +366,7 @@ public class EventService {
             state.setServerId(event.getSource().getServerId());
             state.setFramework(event.getSource().getFramework());
             state.setLanguage(event.getSource().getLanguage());
+            state.setStatus("online");
             state.setCreatedAt(Instant.now());
             agentStateMapper.insert(state);
         }

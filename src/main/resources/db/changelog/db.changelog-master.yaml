@@ -565,10 +565,10 @@ databaseChangeLog:
             indexName: idx_template_enabled
             tableName: agent_templates
 
-  - include:
-      file: db/changelog/20250207-add-agent-templates-data.yaml
-      relativeToChangelogFile: false
-
-  - include:
-      file: db/changelog/20250207-add-sample-memories-data.yaml
-      relativeToChangelogFile: false
+#  - include:
+#      file: db/changelog/20250207-add-agent-templates-data.yaml
+#      relativeToChangelogFile: false
+#
+#  - include:
+#      file: db/changelog/20250207-add-sample-memories-data.yaml
+#      relativeToChangelogFile: false

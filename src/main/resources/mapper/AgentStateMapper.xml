@@ -17,23 +17,26 @@
         <result column="last_activity" property="lastActivity"/>
         <result column="created_at" property="createdAt"/>
         <result column="updated_at" property="updatedAt"/>
+        <result column="is_favorite" property="isFavorite"/>
+        <result column="notes" property="notes"/>
+        <result column="tags" property="tags"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id, agent_id, server_id, framework, language, status,
         current_activity, current_tool, current_task_id, memory_id,
-        role, last_activity, created_at, updated_at
+        role, last_activity, created_at, updated_at, is_favorite, notes, tags
     </sql>
 
     <insert id="insert" parameterType="com.agent.monitor.entity.AgentState" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO agent_states (
             agent_id, server_id, framework, language, status,
             current_activity, current_tool, current_task_id, memory_id,
-            role, last_activity, created_at, updated_at
+            role, last_activity, created_at, updated_at, is_favorite, notes, tags
         ) VALUES (
             #{agentId}, #{serverId}, #{framework}, #{language}, #{status},
             #{currentActivity}, #{currentTool}, #{currentTaskId}, #{memoryId},
-            #{role}, #{lastActivity}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+            #{role}, #{lastActivity}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, #{isFavorite}, #{notes}, #{tags}
         )
     </insert>
 
@@ -50,7 +53,10 @@
             memory_id = #{memoryId},
             role = #{role},
             last_activity = #{lastActivity},
-            updated_at = CURRENT_TIMESTAMP
+            updated_at = CURRENT_TIMESTAMP,
+            is_favorite = #{isFavorite},
+            notes = #{notes},
+            tags = #{tags}
         WHERE agent_id = #{agentId}
     </update>
 
@@ -98,5 +104,31 @@
         DELETE FROM agent_states
         WHERE agent_id = #{agentId}
     </delete>
+
+    <update id="updateFavoriteStatus">
+        UPDATE agent_states
+        SET is_favorite = #{isFavorite}
+        WHERE agent_id = #{agentId}
+    </update>
+
+    <select id="findFavorites" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM agent_states
+        WHERE is_favorite = true
+        ORDER BY last_activity DESC
+    </select>
+
+    <update id="updateNotes">
+        UPDATE agent_states
+        SET notes = #{notes}
+        WHERE agent_id = #{agentId}
+    </update>
+
+    <update id="updateTags">
+        UPDATE agent_states
+        SET tags = #{tags}
+        WHERE agent_id = #{agentId}
+    </update>
 
 </mapper>

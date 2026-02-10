@@ -56,4 +56,24 @@ public interface AgentStateMapper {
      * 根据 Agent ID 删除
      */
     int deleteByAgentId(@Param("agentId") String agentId);
+
+    /**
+     * 更新收藏状态
+     */
+    int updateFavoriteStatus(@Param("agentId") String agentId, @Param("isFavorite") Boolean isFavorite);
+
+    /**
+     * 查找所有收藏的 Agent
+     */
+    List<AgentState> findFavorites();
+
+    /**
+     * 更新备注
+     */
+    int updateNotes(@Param("agentId") String agentId, @Param("notes") String notes);
+
+    /**
+     * 更新标签
+     */
+    int updateTags(@Param("agentId") String agentId, @Param("tags") String tags);
 }

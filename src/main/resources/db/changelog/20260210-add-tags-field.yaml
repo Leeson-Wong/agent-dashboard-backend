@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-agent-tags-field
+      author: agent-monitor
+      changes:
+        - addColumn:
+            tableName: agent_states
+            columns:
+              - column:
+                  name: tags
+                  type: TEXT
+      rollback:
+        - dropColumn:
+            tableName: agent_states
+            columnName: tags

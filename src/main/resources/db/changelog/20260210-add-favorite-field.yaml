@@ -1,0 +1,16 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-agent-favorite-field
+      author: agent-monitor
+      changes:
+        - addColumn:
+            tableName: agent_states
+            columns:
+              - column:
+                  name: is_favorite
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+      rollback:
+        - dropColumn:
+            tableName: agent_states
+            columnName: is_favorite

@@ -2,7 +2,7 @@ spring:
   application:
     name: agent-monitor
 
-  # 数据源配置 - 使用 Druid 连接池
+  # 数据源配置 - MySQL
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -24,7 +24,6 @@ spring:
       test-on-return: false
       pool-prepared-statements: true
       max-pool-prepared-statement-per-connection-size: 20
-      # 监控统计
       filter:
         stat:
           enabled: true
@@ -49,7 +48,6 @@ mybatis:
     map-underscore-to-camel-case: true
     cache-enabled: true
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-
 
 # 服务器配置
 server:

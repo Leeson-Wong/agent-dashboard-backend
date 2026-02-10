@@ -76,4 +76,19 @@ public class AgentState {
      * 更新时间
      */
     private Instant updatedAt;
+
+    /**
+     * 是否收藏
+     */
+    private Boolean isFavorite;
+
+    /**
+     * 用户备注
+     */
+    private String notes;
+
+    /**
+     * 用户标签（JSON 格式存储）
+     */
+    private String tags;
 }

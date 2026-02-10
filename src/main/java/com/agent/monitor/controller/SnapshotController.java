@@ -31,18 +31,17 @@ public class SnapshotController {
      * @return 最新快照
      */
     @GetMapping("/latest")
-    public ResponseEntity<ApiResponse<SnapshotDTO>> getLatestSnapshot() {
+    public ResponseEntity<SnapshotDTO> getLatestSnapshot() {
         log.debug("获取最新快照");
 
         SnapshotDTO snapshot = snapshotService.getLatestSnapshot();
 
         if (snapshot == null) {
             log.warn("没有可用的快照");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.error(404, "No snapshot available"));
+            return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.ok(ApiResponse.success(snapshot));
+        return ResponseEntity.ok(snapshot);
     }
 
     /**

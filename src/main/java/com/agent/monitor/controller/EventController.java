@@ -23,14 +23,6 @@ public class EventController {
     private final EventService eventService;
 
     /**
-     * 健康检查
-     */
-    @GetMapping("/health")
-    public ResponseEntity<Map<String, String>> health() {
-        return ResponseEntity.ok(Map.of("status", "ok"));
-    }
-
-    /**
      * 接收单个事件
      */
     @PostMapping("/events")

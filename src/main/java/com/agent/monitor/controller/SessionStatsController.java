@@ -1,6 +1,7 @@
 package com.agent.monitor.controller;
 
 import com.agent.monitor.dto.ApiResponse;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;

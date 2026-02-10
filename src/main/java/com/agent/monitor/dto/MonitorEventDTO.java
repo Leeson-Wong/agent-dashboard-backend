@@ -1,6 +1,8 @@
 package com.agent.monitor.dto;
 
+import com.agent.monitor.config.LenientInstantDeserializer;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -24,6 +26,7 @@ public class MonitorEventDTO {
 
     @NotNull(message = "时间戳不能为空")
     @JsonProperty("timestamp")
+    @JsonDeserialize(using = LenientInstantDeserializer.class)
     private Instant timestamp;
 
     @NotNull(message = "事件源不能为空")

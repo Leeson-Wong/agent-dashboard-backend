@@ -1885,3 +1885,18 @@ databaseChangeLog:
 #  - include:
 #      file: db/changelog/20250207-add-sample-memories-data.yaml
 #      relativeToChangelogFile: false
+
+  # ============================================================
+  # Agent User Features (2026-02-10)
+  # ============================================================
+  - include:
+      file: db/changelog/20260210-add-favorite-field.yaml
+      relativeToChangelogFile: false
+
+  - include:
+      file: db/changelog/20260210-add-notes-field.yaml
+      relativeToChangelogFile: false
+
+  - include:
+      file: db/changelog/20260210-add-tags-field.yaml
+      relativeToChangelogFile: false
